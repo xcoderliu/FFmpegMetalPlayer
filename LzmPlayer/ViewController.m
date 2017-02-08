@@ -40,7 +40,7 @@
     }];
     [openFileBtn setTarget:self];
     [openFileBtn setAction:@selector(chooseMovie)];
-//    [openFileBtn setAction:@selector(test)];
+    [self openMediaWithUrl:[NSURL fileURLWithPath:@"/Users/liuzhimin/Downloads/SE1101.mp4"]];
 }
 
 - (void)chooseMovie {
@@ -57,19 +57,23 @@
         for (NSURL *url in [panel URLs]) {
             // do something with the url here.
             NSLog(@"🎬 :%@",url);
-            LzmPlayerViewController *Player = [[LzmPlayerViewController alloc] initWithMovieUrl:url];
-            [self.view addSubview:Player.view];
-            [Player.view mas_makeConstraints:^(MASConstraintMaker *make) {
-                make.centerX.equalTo(self.view);
-                make.width.equalTo(@800);
-                make.height.equalTo(@450);
-                make.centerY.equalTo(self.view);
-            }];
-            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(3 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-                [Player play];
-            });
+            [self openMediaWithUrl:url];
         }
     }
+}
+
+- (void)openMediaWithUrl:(NSURL *)url {
+    LzmPlayerViewController *Player = [[LzmPlayerViewController alloc] initWithMovieUrl:url];
+    [self.view addSubview:Player.view];
+    [Player.view mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.centerX.equalTo(self.view);
+        make.width.equalTo(@800);
+        make.height.equalTo(@450);
+        make.centerY.equalTo(self.view);
+    }];
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+        [Player play];
+    });
 }
 
 

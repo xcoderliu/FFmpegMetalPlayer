@@ -14,6 +14,7 @@
 		F883C8331E49B6FE0048BA4F /* LzmMediaDecoder.m in Sources */ = {isa = PBXBuildFile; fileRef = F883C82D1E49B6FE0048BA4F /* LzmMediaDecoder.m */; };
 		F883C8341E49B6FE0048BA4F /* LzmMediaGLView.m in Sources */ = {isa = PBXBuildFile; fileRef = F883C82F1E49B6FE0048BA4F /* LzmMediaGLView.m */; };
 		F883C8351E49B6FE0048BA4F /* LzmPlayerViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = F883C8311E49B6FE0048BA4F /* LzmPlayerViewController.m */; };
+		F895B1481E4B1BC0000B9CD2 /* OpenGL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F8CE6AFD1E48B0FD00ADA634 /* OpenGL.framework */; };
 		F8B004671E484A7500AFF606 /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = F8B004661E484A7500AFF606 /* AppDelegate.m */; };
 		F8B0046A1E484A7500AFF606 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = F8B004691E484A7500AFF606 /* main.m */; };
 		F8B0046D1E484A7500AFF606 /* ViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = F8B0046C1E484A7500AFF606 /* ViewController.m */; };
@@ -141,6 +142,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F895B1481E4B1BC0000B9CD2 /* OpenGL.framework in Frameworks */,
 				F8CE6BDC1E495BC400ADA634 /* libiconv.2.4.0.tbd in Frameworks */,
 				F8CE6BCD1E4957AE00ADA634 /* libz.tbd in Frameworks */,
 				F883C8271E4962560048BA4F /* libx264.a in Frameworks */,

@@ -293,8 +293,8 @@ static int interrupt_callback(void *ctx);
 @end
 
 @interface lzmVideoFrame()
-@property (readwrite, nonatomic) NSUInteger width;
-@property (readwrite, nonatomic) NSUInteger height;
+@property (readwrite, nonatomic) GLsizei width;
+@property (readwrite, nonatomic) GLsizei height;
 @end
 
 @implementation lzmVideoFrame
@@ -688,8 +688,6 @@ static int interrupt_callback(void *ctx);
 
 + (void)initialize
 {
-//    av_log_set_callback(FFLog);
-    avcodec_register_all();
     av_register_all();
     avformat_network_init();
 }

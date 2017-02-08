@@ -8,7 +8,6 @@
 
 #import "LzmMediaGLView.h"
 #import <QuartzCore/QuartzCore.h>
-#import <OpenGL/OpenGL.h>
 #import <OpenGL/gl.h>
 #import "LzmMediaDecoder.h"
 
@@ -36,7 +35,7 @@ NSString *const vertexShaderString = SHADER_STRING
 
 NSString *const rgbFragmentShaderString = SHADER_STRING
 (
- varying highp vec2 v_texcoord;
+ varying vec2 v_texcoord;
  uniform sampler2D s_texture;
  
  void main()
@@ -47,20 +46,20 @@ NSString *const rgbFragmentShaderString = SHADER_STRING
 
 NSString *const yuvFragmentShaderString = SHADER_STRING
 (
- varying highp vec2 v_texcoord;
+ varying vec2 v_texcoord;
  uniform sampler2D s_texture_y;
  uniform sampler2D s_texture_u;
  uniform sampler2D s_texture_v;
  
  void main()
  {
-     highp float y = texture2D(s_texture_y, v_texcoord).r;
-     highp float u = texture2D(s_texture_u, v_texcoord).r - 0.5;
-     highp float v = texture2D(s_texture_v, v_texcoord).r - 0.5;
+      float y = texture2D(s_texture_y, v_texcoord).r;
+      float u = texture2D(s_texture_u, v_texcoord).r - 0.5;
+      float v = texture2D(s_texture_v, v_texcoord).r - 0.5;
      
-     highp float r = y +             1.402 * v;
-     highp float g = y - 0.344 * u - 0.714 * v;
-     highp float b = y + 1.772 * u;
+      float r = y +             1.402 * v;
+      float g = y - 0.344 * u - 0.714 * v;
+      float b = y + 1.772 * u;
      
      gl_FragColor = vec4(r,g,b,1.0);
  }
@@ -281,8 +280,8 @@ static void mat4f_LoadOrtho(float left, float right, float bottom, float top, fl
     assert(yuvFrame.chromaB.length == (yuvFrame.width * yuvFrame.height) / 4);
     assert(yuvFrame.chromaR.length == (yuvFrame.width * yuvFrame.height) / 4);
     
-    const NSUInteger frameWidth = frame.width;
-    const NSUInteger frameHeight = frame.height;
+    const GLsizei frameWidth = frame.width;
+    const GLsizei frameHeight = frame.height;
     
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
     
@@ -290,8 +289,8 @@ static void mat4f_LoadOrtho(float left, float right, float bottom, float top, fl
         glGenTextures(3, _textures);
     
     const UInt8 *pixels[3] = { yuvFrame.luma.bytes, yuvFrame.chromaB.bytes, yuvFrame.chromaR.bytes };
-    const NSUInteger widths[3]  = { frameWidth, frameWidth / 2, frameWidth / 2 };
-    const NSUInteger heights[3] = { frameHeight, frameHeight / 2, frameHeight / 2 };
+    const GLsizei widths[3]  = { frameWidth, frameWidth / 2, frameWidth / 2 };
+    const GLsizei heights[3] = { frameHeight, frameHeight / 2, frameHeight / 2 };
     
     for (int i = 0; i < 3; ++i) {
         
@@ -348,8 +347,8 @@ enum {
 
 @implementation LzmMediaGLView {
     
-    LzmMediaDecoder  *_decoder;
-    NSOpenGLContext     *_context;
+    LzmMediaDecoder *_decoder;
+    NSOpenGLContext *_context;
     GLuint          _framebuffer;
     GLuint          _renderbuffer;
     GLint           _backingWidth;
@@ -359,11 +358,6 @@ enum {
     GLfloat         _vertices[8];
     
     id<lzmMovieGLRenderer> _renderer;
-}
-
-+ (Class) layerClass
-{
-    return [NSOpenGLLayer class];
 }
 
 - (id) initWithFrame:(CGRect)frame
@@ -385,40 +379,56 @@ enum {
             NSLog(@"OK use RGB GL renderer");
         }
         
-        NSOpenGLLayer *glLayer = (NSOpenGLLayer*) self.layer;
-        glLayer.opaque = YES;
-
-        NSOpenGLPixelFormatAttribute glAttributes[] =
+        NSOpenGLPixelFormatAttribute attrs[] =
         {
-            NSOpenGLPFAColorSize, 24,
-            NSOpenGLPFAAlphaSize, 8,
-            NSOpenGLPFADoubleBuffer,
             NSOpenGLPFAAccelerated,
+            NSOpenGLPFADoubleBuffer,
+            NSOpenGLPFADepthSize, 24,
+            NSOpenGLPFAAlphaSize, 8,
+            NSOpenGLPFAColorSize, 24,
+            NSOpenGLPFABackingStore,
+            NSOpenGLPFANoRecovery,
+            kCGLPFASampleBuffers, 1, kCGLPFASamples, 2,
             0
         };
         
-        NSOpenGLPixelFormat *pixelFormat = [[NSOpenGLPixelFormat alloc] initWithAttributes:glAttributes];
-        _context = [[NSOpenGLContext alloc] initWithFormat:pixelFormat shareContext:nil];
-        [_context setView:self];
-        [_context makeCurrentContext];
+        NSOpenGLPixelFormat *pf = [[NSOpenGLPixelFormat alloc] initWithAttributes:attrs];
+        
+        _context = [[NSOpenGLContext alloc] initWithFormat:pf
+                                                    shareContext:nil];
         
         if (!_context) {
             NSLog(@"failed to setup NSOpenGLContext");
             return nil;
         }
         
-        glGenFramebuffers(1, &_framebuffer);
+        GLint interval = 0;
+        [_context setValues:&interval forParameter:NSOpenGLContextParameterSwapInterval];
+        
+        [_context setView:self];
+        [_context makeCurrentContext];
+        
         glGenRenderbuffers(1, &_renderbuffer);
-        glBindFramebuffer(GL_FRAMEBUFFER, _framebuffer);
         glBindRenderbuffer(GL_RENDERBUFFER, _renderbuffer);
-        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT16, frame.size.width, frame.size.height);
+        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT16, (GLsizei)(frame.size.width), (GLsizei)(frame.size.height));
+        
+        glGenFramebuffers(1, &_framebuffer);
+        glBindFramebuffer(GL_FRAMEBUFFER, _framebuffer);
+        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, _renderbuffer);
+        
         glGetRenderbufferParameteriv(GL_RENDERBUFFER, GL_RENDERBUFFER_WIDTH, &_backingWidth);
         glGetRenderbufferParameteriv(GL_RENDERBUFFER, GL_RENDERBUFFER_HEIGHT, &_backingHeight);
-        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, _renderbuffer);
+        
+        GLuint colorTexture;
+        glGenTextures(1, &colorTexture);
+        glBindTexture(GL_TEXTURE_2D, colorTexture);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA,
+                     (GLsizei)(frame.size.width), (GLsizei)(frame.size.height), 0,
+                     GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, colorTexture, 0);
         
         GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
         if (status != GL_FRAMEBUFFER_COMPLETE) {
-            
             NSLog(@"failed to make complete framebuffer object %x", status);
             self = nil;
             return nil;
@@ -475,8 +485,6 @@ enum {
     if ([NSOpenGLContext currentContext] == _context) {
         [NSOpenGLContext clearCurrentContext];
     }
-    
-    _context = nil;
 }
 
 - (void)layoutSubviews
@@ -584,6 +592,7 @@ exit:
         1.0f, 0.0f,
     };
     
+    [_context setView:self];
     [_context makeCurrentContext];
     
     glBindFramebuffer(GL_FRAMEBUFFER, _framebuffer);
@@ -617,7 +626,6 @@ exit:
         
         glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
     }
-    
     glBindRenderbuffer(GL_RENDERBUFFER, _renderbuffer);
     [_context flushBuffer];
 }

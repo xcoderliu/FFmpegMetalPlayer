@@ -11,7 +11,6 @@
 extern NSString * lzmMediaErrorDomain;
 
 typedef enum {
-    
     lzmMediaErrorNone,
     lzmMediaErrorOpenFile,
     lzmMediaErrorStreamInfoNotFound,
@@ -26,7 +25,6 @@ typedef enum {
 } lzmMediaError;
 
 typedef enum {
-    
     lzmMediaFrameTypeAudio,
     lzmMediaFrameTypeVideo,
     lzmMediaFrameTypeArtwork,
@@ -35,7 +33,6 @@ typedef enum {
 } lzmMediaFrameType;
 
 typedef enum {
-    
     lzmVideoFrameFormatRGB,
     lzmVideoFrameFormatYUV,
     
@@ -53,8 +50,8 @@ typedef enum {
 
 @interface lzmVideoFrame : lzmMediaFrame
 @property (readonly, nonatomic) lzmVideoFrameFormat format;
-@property (readonly, nonatomic) NSUInteger width;
-@property (readonly, nonatomic) NSUInteger height;
+@property (readonly, nonatomic) GLsizei width;
+@property (readonly, nonatomic) GLsizei height;
 @end
 
 @interface lzmVideoFrameRGB : lzmVideoFrame

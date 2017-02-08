@@ -153,9 +153,6 @@ static NSMutableDictionary * gHistory;
         {
             
             _moviePosition = 0;
-            //        self.wantsFullScreenLayout = YES;
-            
-            
             
             __weak LzmPlayerViewController *weakSelf = self;
             
@@ -173,6 +170,7 @@ static NSMutableDictionary * gHistory;
                 [decoder openFile: [url isFileURL] ? [url path] : [url absoluteString] error:&error];
                 
                 __strong LzmPlayerViewController *strongSelf = weakSelf;
+                
                 if (strongSelf) {
                     
                     dispatch_sync(dispatch_get_main_queue(), ^{
@@ -213,7 +211,6 @@ static NSMutableDictionary * gHistory;
 //    
 //    [self.view insertSubview:frameView atIndex:0];
     [self.view addSubview:frameView];
-    frameView.layer.backgroundColor = CGColorCreateGenericRGB(0, 0, 1, 1);
     
     if (_decoder.validVideo) {
         
@@ -337,8 +334,10 @@ static NSMutableDictionary * gHistory;
     
         
         if (self.isViewLoaded) {
+            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.5 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+                [self setupPresentView];
+            });
             
-            [self setupPresentView];
 //
 //            _progressLabel.hidden   = NO;
 //            _progressSlider.hidden  = NO;
