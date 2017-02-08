@@ -1,0 +1,1 @@
+this is a ffmpeg demo of osx app and based on kxmovie
