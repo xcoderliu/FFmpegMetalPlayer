@@ -366,7 +366,7 @@ enum {
         
         _decoder = decoder;
         
-        if (/*[decoder setupVideoFrameFormat:lzmVideoFrameFormatYUV]*/0) {
+        if (/*[decoder setupVideoFrameFormat:lzmVideoFrameFormatYUV]*//* DISABLES CODE */ (0)) {
             
             _renderer = [[lzmMovieGLRenderer_YUV alloc] init];
             NSLog(@"OK use YUV GL renderer");

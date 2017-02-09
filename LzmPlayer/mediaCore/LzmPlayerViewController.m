@@ -196,6 +196,8 @@ static NSMutableDictionary * gHistory;
     
     if (_decoder.validVideo) {
         _glView = [[LzmMediaGLView alloc] initWithFrame:bounds decoder:_decoder];
+        //坑是在太多暂时屏蔽掉openGL
+        _glView = nil;
     }
     
     if (!_glView) {

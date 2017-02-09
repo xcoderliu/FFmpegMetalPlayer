@@ -11,7 +11,9 @@
 #import <Masonry/Masonry.h>
 
 @implementation ViewController
-
+{
+    LzmPlayerViewController *lastPlayer;
+}
 
 - (void)viewDidLoad {
     [super viewDidLoad];
@@ -58,6 +60,8 @@
         for (NSURL *url in [panel URLs]) {
             // do something with the url here.
             NSLog(@"🎬 :%@",url);
+            [lastPlayer pause];
+            [lastPlayer.view removeFromSuperview];
             [self openMediaWithUrl:url];
         }
     }
@@ -72,8 +76,9 @@
         make.height.equalTo(@450);
         make.centerY.equalTo(self.view);
     }];
+    lastPlayer = Player;
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-        [Player play];
+        [lastPlayer play];
     });
 }
 
