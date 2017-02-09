@@ -22,6 +22,8 @@
 		F8B004721E484A7500AFF606 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = F8B004701E484A7500AFF606 /* Main.storyboard */; };
 		F8B0047D1E484A7500AFF606 /* LzmPlayerTests.m in Sources */ = {isa = PBXBuildFile; fileRef = F8B0047C1E484A7500AFF606 /* LzmPlayerTests.m */; };
 		F8B004881E484A7500AFF606 /* LzmPlayerUITests.m in Sources */ = {isa = PBXBuildFile; fileRef = F8B004871E484A7500AFF606 /* LzmPlayerUITests.m */; };
+		F8C2F3B41E4C38BC009E48AB /* libbz2.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = F8C2F3B31E4C38BC009E48AB /* libbz2.tbd */; };
+		F8C2F3B61E4C38DF009E48AB /* VideoDecodeAcceleration.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F8C2F3B51E4C38DF009E48AB /* VideoDecodeAcceleration.framework */; };
 		F8CE6AF91E485DD400ADA634 /* Masonry.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F8CE6AF81E485DD400ADA634 /* Masonry.framework */; };
 		F8CE6AFA1E485DD400ADA634 /* Masonry.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = F8CE6AF81E485DD400ADA634 /* Masonry.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		F8CE6BB01E49564300ADA634 /* libavcodec.a in Frameworks */ = {isa = PBXBuildFile; fileRef = F8CE6BA71E49564300ADA634 /* libavcodec.a */; };
@@ -39,11 +41,9 @@
 		F8CE6BC41E4956F500ADA634 /* CoreAudio.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F8CE6BC31E4956F500ADA634 /* CoreAudio.framework */; };
 		F8CE6BC61E4956FB00ADA634 /* AudioToolbox.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F8CE6BC51E4956FB00ADA634 /* AudioToolbox.framework */; };
 		F8CE6BC81E49572C00ADA634 /* Accelerate.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F8CE6BC71E49572C00ADA634 /* Accelerate.framework */; };
-		F8CE6BCC1E49578000ADA634 /* libbz2.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = F8CE6BCB1E49578000ADA634 /* libbz2.tbd */; };
 		F8CE6BCD1E4957AE00ADA634 /* libz.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = F8CE6BBB1E49569B00ADA634 /* libz.tbd */; };
 		F8CE6BD11E4957F600ADA634 /* CoreMedia.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F8CE6BD01E4957F600ADA634 /* CoreMedia.framework */; };
 		F8CE6BD31E49582A00ADA634 /* CoreVideo.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F8CE6BD21E49582A00ADA634 /* CoreVideo.framework */; };
-		F8CE6BD51E49583500ADA634 /* VideoDecodeAcceleration.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F8CE6BD41E49583500ADA634 /* VideoDecodeAcceleration.framework */; };
 		F8CE6BD71E49584800ADA634 /* VideoToolbox.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F8CE6BD61E49584800ADA634 /* VideoToolbox.framework */; };
 		F8CE6BDC1E495BC400ADA634 /* libiconv.2.4.0.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = F8CE6BDB1E495BC400ADA634 /* libiconv.2.4.0.tbd */; };
 /* End PBXBuildFile section */
@@ -106,6 +106,8 @@
 		F8B004831E484A7500AFF606 /* LzmPlayerUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = LzmPlayerUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		F8B004871E484A7500AFF606 /* LzmPlayerUITests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = LzmPlayerUITests.m; sourceTree = "<group>"; };
 		F8B004891E484A7500AFF606 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		F8C2F3B31E4C38BC009E48AB /* libbz2.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libbz2.tbd; path = usr/lib/libbz2.tbd; sourceTree = SDKROOT; };
+		F8C2F3B51E4C38DF009E48AB /* VideoDecodeAcceleration.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = VideoDecodeAcceleration.framework; path = System/Library/Frameworks/VideoDecodeAcceleration.framework; sourceTree = SDKROOT; };
 		F8CE6AF81E485DD400ADA634 /* Masonry.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Masonry.framework; path = ../Carthage/Build/Mac/Masonry.framework; sourceTree = "<group>"; };
 		F8CE6AFB1E48629E00ADA634 /* LzmPlayer.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = LzmPlayer.entitlements; sourceTree = "<group>"; };
 		F8CE6AFD1E48B0FD00ADA634 /* OpenGL.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = OpenGL.framework; path = System/Library/Frameworks/OpenGL.framework; sourceTree = SDKROOT; };
@@ -127,13 +129,9 @@
 		F8CE6BC51E4956FB00ADA634 /* AudioToolbox.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AudioToolbox.framework; path = System/Library/Frameworks/AudioToolbox.framework; sourceTree = SDKROOT; };
 		F8CE6BC71E49572C00ADA634 /* Accelerate.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Accelerate.framework; path = System/Library/Frameworks/Accelerate.framework; sourceTree = SDKROOT; };
 		F8CE6BC91E49573F00ADA634 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
-		F8CE6BCB1E49578000ADA634 /* libbz2.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libbz2.tbd; path = usr/lib/libbz2.tbd; sourceTree = SDKROOT; };
-		F8CE6BCE1E4957E700ADA634 /* CoreMediaIO.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreMediaIO.framework; path = System/Library/Frameworks/CoreMediaIO.framework; sourceTree = SDKROOT; };
 		F8CE6BD01E4957F600ADA634 /* CoreMedia.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreMedia.framework; path = System/Library/Frameworks/CoreMedia.framework; sourceTree = SDKROOT; };
 		F8CE6BD21E49582A00ADA634 /* CoreVideo.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreVideo.framework; path = System/Library/Frameworks/CoreVideo.framework; sourceTree = SDKROOT; };
-		F8CE6BD41E49583500ADA634 /* VideoDecodeAcceleration.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = VideoDecodeAcceleration.framework; path = System/Library/Frameworks/VideoDecodeAcceleration.framework; sourceTree = SDKROOT; };
 		F8CE6BD61E49584800ADA634 /* VideoToolbox.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = VideoToolbox.framework; path = System/Library/Frameworks/VideoToolbox.framework; sourceTree = SDKROOT; };
-		F8CE6BD91E495A7800ADA634 /* OpenCL.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = OpenCL.framework; path = System/Library/Frameworks/OpenCL.framework; sourceTree = SDKROOT; };
 		F8CE6BDB1E495BC400ADA634 /* libiconv.2.4.0.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libiconv.2.4.0.tbd; path = usr/lib/libiconv.2.4.0.tbd; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
@@ -142,13 +140,13 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F8C2F3B61E4C38DF009E48AB /* VideoDecodeAcceleration.framework in Frameworks */,
+				F8C2F3B41E4C38BC009E48AB /* libbz2.tbd in Frameworks */,
 				F895B1481E4B1BC0000B9CD2 /* OpenGL.framework in Frameworks */,
 				F8CE6BDC1E495BC400ADA634 /* libiconv.2.4.0.tbd in Frameworks */,
 				F8CE6BCD1E4957AE00ADA634 /* libz.tbd in Frameworks */,
 				F883C8271E4962560048BA4F /* libx264.a in Frameworks */,
-				F8CE6BCC1E49578000ADA634 /* libbz2.tbd in Frameworks */,
 				F8CE6BD71E49584800ADA634 /* VideoToolbox.framework in Frameworks */,
-				F8CE6BD51E49583500ADA634 /* VideoDecodeAcceleration.framework in Frameworks */,
 				F8CE6BD11E4957F600ADA634 /* CoreMedia.framework in Frameworks */,
 				F8CE6BC01E4956C400ADA634 /* MediaPlayer.framework in Frameworks */,
 				F8CE6BC81E49572C00ADA634 /* Accelerate.framework in Frameworks */,
@@ -284,22 +282,20 @@
 		F8CE6AFC1E48B0FD00ADA634 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				F8CE6BBD1E4956AE00ADA634 /* libiconv.tbd */,
+				F8CE6BBB1E49569B00ADA634 /* libz.tbd */,
+				F8C2F3B31E4C38BC009E48AB /* libbz2.tbd */,
 				F8CE6BDB1E495BC400ADA634 /* libiconv.2.4.0.tbd */,
-				F8CE6BD91E495A7800ADA634 /* OpenCL.framework */,
+				F8C2F3B51E4C38DF009E48AB /* VideoDecodeAcceleration.framework */,
 				F8CE6BD61E49584800ADA634 /* VideoToolbox.framework */,
-				F8CE6BD41E49583500ADA634 /* VideoDecodeAcceleration.framework */,
 				F8CE6BD21E49582A00ADA634 /* CoreVideo.framework */,
 				F8CE6BD01E4957F600ADA634 /* CoreMedia.framework */,
-				F8CE6BCE1E4957E700ADA634 /* CoreMediaIO.framework */,
-				F8CE6BCB1E49578000ADA634 /* libbz2.tbd */,
 				F8CE6BC91E49573F00ADA634 /* Foundation.framework */,
 				F8CE6BC71E49572C00ADA634 /* Accelerate.framework */,
 				F8CE6BC51E4956FB00ADA634 /* AudioToolbox.framework */,
 				F8CE6BC31E4956F500ADA634 /* CoreAudio.framework */,
 				F8CE6BC11E4956D600ADA634 /* QuartzCore.framework */,
 				F8CE6BBF1E4956C400ADA634 /* MediaPlayer.framework */,
-				F8CE6BBD1E4956AE00ADA634 /* libiconv.tbd */,
-				F8CE6BBB1E49569B00ADA634 /* libz.tbd */,
 				F8CE6BB91E49568600ADA634 /* CoreGraphics.framework */,
 				F8CE6AFD1E48B0FD00ADA634 /* OpenGL.framework */,
 			);

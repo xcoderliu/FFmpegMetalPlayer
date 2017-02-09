@@ -210,7 +210,7 @@ static NSMutableDictionary * gHistory;
 //    frameView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleTopMargin | UIViewAutoresizingFlexibleRightMargin | UIViewAutoresizingFlexibleLeftMargin | UIViewAutoresizingFlexibleHeight | UIViewAutoresizingFlexibleBottomMargin;
 //    
 //    [self.view insertSubview:frameView atIndex:0];
-    [self.view addSubview:frameView];
+    [self.view addSubview:frameView positioned:NSWindowAbove relativeTo:nil];
     
     if (_decoder.validVideo) {
         

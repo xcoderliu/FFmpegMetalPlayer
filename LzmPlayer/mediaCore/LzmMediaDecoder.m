@@ -1113,7 +1113,7 @@ static int interrupt_callback(void *ctx);
     
     lzmVideoFrame *frame;
     
-    if (_videoFrameFormat == lzmVideoFrameFormatYUV) {
+    if (/*_videoFrameFormat == lzmVideoFrameFormatYUV*/0) {
         
         lzmVideoFrameYUV * yuvFrame = [[lzmVideoFrameYUV alloc] init];
         

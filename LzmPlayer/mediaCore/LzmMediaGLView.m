@@ -167,8 +167,8 @@ static void mat4f_LoadOrtho(float left, float right, float bottom, float top, fl
 - (BOOL) isValid;
 - (NSString *) fragmentShader;
 - (void) resolveUniforms: (GLuint) program;
-- (void) setFrame: (lzmVideoFrame *) frame;
-- (BOOL) prepareRender;
+- (void) setFrame: (lzmVideoFrame *) frame texture:(GLuint*)texture;
+- (BOOL) prepareRender:(GLuint*)texture;
 @end
 
 @interface lzmMovieGLRenderer_RGB : NSObject<lzmMovieGLRenderer> {
@@ -195,7 +195,7 @@ static void mat4f_LoadOrtho(float left, float right, float bottom, float top, fl
     _uniformSampler = glGetUniformLocation(program, "s_texture");
 }
 
-- (void) setFrame: (lzmVideoFrame *) frame
+- (void) setFrame: (lzmVideoFrame *) frame texture:(GLuint*)texture
 {
     lzmVideoFrameRGB *rgbFrame = (lzmVideoFrameRGB *)frame;
     
@@ -203,10 +203,12 @@ static void mat4f_LoadOrtho(float left, float right, float bottom, float top, fl
     
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
     
-    if (0 == _texture)
-        glGenTextures(1, &_texture);
+    glBindTexture(GL_TEXTURE_2D, *texture);
     
-    glBindTexture(GL_TEXTURE_2D, _texture);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     
     glTexImage2D(GL_TEXTURE_2D,
                  0,
@@ -217,20 +219,15 @@ static void mat4f_LoadOrtho(float left, float right, float bottom, float top, fl
                  GL_RGB,
                  GL_UNSIGNED_BYTE,
                  rgbFrame.rgb.bytes);
-    
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 }
 
-- (BOOL) prepareRender
+- (BOOL) prepareRender:(GLuint*)texture
 {
-    if (_texture == 0)
+    if (texture == 0)
         return NO;
     
     glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, _texture);
+    glBindTexture(GL_TEXTURE_2D, *texture);
     glUniform1i(_uniformSampler, 0);
     
     return YES;
@@ -272,7 +269,7 @@ static void mat4f_LoadOrtho(float left, float right, float bottom, float top, fl
     _uniformSamplers[2] = glGetUniformLocation(program, "s_texture_v");
 }
 
-- (void) setFrame: (lzmVideoFrame *) frame
+- (void) setFrame: (lzmVideoFrame *) frame texture:(GLuint*)texture
 {
     lzmVideoFrameYUV *yuvFrame = (lzmVideoFrameYUV *)frame;
     
@@ -313,7 +310,7 @@ static void mat4f_LoadOrtho(float left, float right, float bottom, float top, fl
     }
 }
 
-- (BOOL) prepareRender
+- (BOOL) prepareRender:(GLuint*)texture
 {
     if (_textures[0] == 0)
         return NO;
@@ -323,7 +320,6 @@ static void mat4f_LoadOrtho(float left, float right, float bottom, float top, fl
         glBindTexture(GL_TEXTURE_2D, _textures[i]);
         glUniform1i(_uniformSamplers[i], i);
     }
-    
     return YES;
 }
 
@@ -348,7 +344,9 @@ enum {
 @implementation LzmMediaGLView {
     
     LzmMediaDecoder *_decoder;
+    CVDisplayLinkRef _displayLink;
     NSOpenGLContext *_context;
+    GLuint           _colorTexture;
     GLuint          _framebuffer;
     GLuint          _renderbuffer;
     GLint           _backingWidth;
@@ -368,7 +366,7 @@ enum {
         
         _decoder = decoder;
         
-        if ([decoder setupVideoFrameFormat:lzmVideoFrameFormatYUV]) {
+        if (/*[decoder setupVideoFrameFormat:lzmVideoFrameFormatYUV]*/0) {
             
             _renderer = [[lzmMovieGLRenderer_YUV alloc] init];
             NSLog(@"OK use YUV GL renderer");
@@ -379,88 +377,101 @@ enum {
             NSLog(@"OK use RGB GL renderer");
         }
         
-        NSOpenGLPixelFormatAttribute attrs[] =
-        {
-            NSOpenGLPFAAccelerated,
-            NSOpenGLPFADoubleBuffer,
-            NSOpenGLPFADepthSize, 24,
-            NSOpenGLPFAAlphaSize, 8,
-            NSOpenGLPFAColorSize, 24,
-            NSOpenGLPFABackingStore,
-            NSOpenGLPFANoRecovery,
-            kCGLPFASampleBuffers, 1, kCGLPFASamples, 2,
-            0
-        };
-        
-        NSOpenGLPixelFormat *pf = [[NSOpenGLPixelFormat alloc] initWithAttributes:attrs];
-        
-        _context = [[NSOpenGLContext alloc] initWithFormat:pf
-                                                    shareContext:nil];
-        
-        if (!_context) {
-            NSLog(@"failed to setup NSOpenGLContext");
-            return nil;
-        }
-        
-        GLint interval = 0;
-        [_context setValues:&interval forParameter:NSOpenGLContextParameterSwapInterval];
-        
-        [_context setView:self];
-        [_context makeCurrentContext];
-        
-        glGenRenderbuffers(1, &_renderbuffer);
-        glBindRenderbuffer(GL_RENDERBUFFER, _renderbuffer);
-        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT16, (GLsizei)(frame.size.width), (GLsizei)(frame.size.height));
-        
-        glGenFramebuffers(1, &_framebuffer);
-        glBindFramebuffer(GL_FRAMEBUFFER, _framebuffer);
-        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, _renderbuffer);
-        
-        glGetRenderbufferParameteriv(GL_RENDERBUFFER, GL_RENDERBUFFER_WIDTH, &_backingWidth);
-        glGetRenderbufferParameteriv(GL_RENDERBUFFER, GL_RENDERBUFFER_HEIGHT, &_backingHeight);
-        
-        GLuint colorTexture;
-        glGenTextures(1, &colorTexture);
-        glBindTexture(GL_TEXTURE_2D, colorTexture);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA,
-                     (GLsizei)(frame.size.width), (GLsizei)(frame.size.height), 0,
-                     GL_RGBA, GL_UNSIGNED_BYTE, NULL);
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, colorTexture, 0);
-        
-        GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-        if (status != GL_FRAMEBUFFER_COMPLETE) {
-            NSLog(@"failed to make complete framebuffer object %x", status);
+        if (![self initOpenGL:frame]) {
             self = nil;
             return nil;
         }
-        
-        GLenum glError = glGetError();
-        if (GL_NO_ERROR != glError) {
-            
-            NSLog(@"failed to setup GL %x", glError);
-            self = nil;
-            return nil;
-        }
-        
-        if (![self loadShaders]) {
-            
-            self = nil;
-            return nil;
-        }
-        
-        _vertices[0] = -1.0f;  // x0
-        _vertices[1] = -1.0f;  // y0
-        _vertices[2] =  1.0f;  // ..
-        _vertices[3] = -1.0f;
-        _vertices[4] = -1.0f;
-        _vertices[5] =  1.0f;
-        _vertices[6] =  1.0f;  // x3
-        _vertices[7] =  1.0f;  // y3
-        
-        NSLog(@"OK setup GL");
+       
+    }
+    [[NSNotificationCenter defaultCenter] addObserver:self
+                                             selector:@selector(_surfaceNeedsUpdate:)
+                                                 name:NSViewGlobalFrameDidChangeNotification
+                                               object:self];
+    return self;
+}
+
+- (BOOL)initOpenGL:(CGRect)frame {
+    NSOpenGLPixelFormatAttribute attrs[] =
+    {
+        NSOpenGLPFAAccelerated,
+        NSOpenGLPFADoubleBuffer,
+        NSOpenGLPFADepthSize, 24,
+        NSOpenGLPFAAlphaSize, 8,
+        NSOpenGLPFAColorSize, 24,
+        NSOpenGLPFABackingStore,
+        NSOpenGLPFANoRecovery,
+        NSOpenGLPFAScreenMask,
+        kCGLPFASampleBuffers, 1,
+        kCGLPFASamples, 2,
+        0
+    };
+    
+    NSOpenGLPixelFormat *pf = [[NSOpenGLPixelFormat alloc] initWithAttributes:attrs];
+    
+    _context = [[NSOpenGLContext alloc] initWithFormat:pf
+                                          shareContext:nil];
+    
+    if (!_context) {
+        NSLog(@"failed to setup NSOpenGLContext");
+        return NO;
     }
     
-    return self;
+    GLint interval = 0;
+    [_context setValues:&interval forParameter:NSOpenGLContextParameterSwapInterval];
+    
+    [_context setView:self];
+    [_context makeCurrentContext];
+    
+    glGenRenderbuffers(1, &_renderbuffer);
+    glBindRenderbuffer(GL_RENDERBUFFER, _renderbuffer);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT16, (GLsizei)(frame.size.width), (GLsizei)(frame.size.height));
+    
+    glGenFramebuffers(1, &_framebuffer);
+    glBindFramebuffer(GL_FRAMEBUFFER, _framebuffer);
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, _renderbuffer);
+    
+    glGetRenderbufferParameteriv(GL_RENDERBUFFER, GL_RENDERBUFFER_WIDTH, &_backingWidth);
+    glGetRenderbufferParameteriv(GL_RENDERBUFFER, GL_RENDERBUFFER_HEIGHT, &_backingHeight);
+    
+    glGenTextures(1, &_colorTexture);
+    glBindTexture(GL_TEXTURE_2D, _colorTexture);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB,
+                 (GLsizei)(frame.size.width), (GLsizei)(frame.size.height), 0,
+                 GL_RGB, GL_UNSIGNED_BYTE, NULL);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, _colorTexture, 0);
+    
+    GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+    if (status != GL_FRAMEBUFFER_COMPLETE) {
+        NSLog(@"failed to make complete framebuffer object %x", status);
+        return NO;
+    }
+    GLenum glError = glGetError();
+    if (GL_NO_ERROR != glError) {
+        
+        NSLog(@"failed to setup GL %x", glError);
+        return NO;
+    }
+    
+    if (![self loadShaders]) {
+        return NO;
+    }
+
+    _vertices[0] = -1.0f;  // x0
+    _vertices[1] = -1.0f;  // y0
+    _vertices[2] =  1.0f;  // ..
+    _vertices[3] = -1.0f;
+    _vertices[4] = -1.0f;
+    _vertices[5] =  1.0f;
+    _vertices[6] =  1.0f;  // x3
+    _vertices[7] =  1.0f;  // y3
+    
+    NSLog(@"OK setup GL");
+    return YES;
+}
+
+- (void)_surfaceNeedsUpdate:(NSNotification*)notification {
+    [self layoutSubviews];
+    [_context update];
 }
 
 - (void)dealloc
@@ -485,7 +496,10 @@ enum {
     if ([NSOpenGLContext currentContext] == _context) {
         [NSOpenGLContext clearCurrentContext];
     }
+    [[NSNotificationCenter defaultCenter] removeObserver:self];
 }
+
+
 
 - (void)layoutSubviews
 {
@@ -594,18 +608,16 @@ exit:
     
     [_context setView:self];
     [_context makeCurrentContext];
-    
     glBindFramebuffer(GL_FRAMEBUFFER, _framebuffer);
     glViewport(0, 0, _backingWidth, _backingHeight);
-    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    glClearColor(1.0f, 0.0f, 1.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
     glUseProgram(_program);
-    
     if (frame) {
-        [_renderer setFrame:frame];
+        [_renderer setFrame:frame texture:&_colorTexture];
     }
     
-    if ([_renderer prepareRender]) {
+    if ([_renderer prepareRender:&_colorTexture]) {
         
         GLfloat modelviewProj[16];
         mat4f_LoadOrtho(-1.0f, 1.0f, -1.0f, 1.0f, -1.0f, 1.0f, modelviewProj);
@@ -626,7 +638,13 @@ exit:
         
         glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
     }
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, _colorTexture, 0);
     glBindRenderbuffer(GL_RENDERBUFFER, _renderbuffer);
+    GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+    if (status != GL_FRAMEBUFFER_COMPLETE) {
+        NSLog(@"failed to make complete framebuffer object %x", status);
+    }
+    glFinish();
     [_context flushBuffer];
 }
 
