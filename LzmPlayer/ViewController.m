@@ -72,8 +72,8 @@
     [self.view addSubview:Player.view];
     [Player.view mas_makeConstraints:^(MASConstraintMaker *make) {
         make.centerX.equalTo(self.view);
-        make.width.equalTo(@800);
-        make.height.equalTo(@450);
+        make.width.equalTo(self.view);
+        make.height.equalTo(self.view);
         make.centerY.equalTo(self.view);
     }];
     lastPlayer = Player;
