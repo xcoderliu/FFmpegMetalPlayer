@@ -13,6 +13,7 @@
 @implementation ViewController
 {
     LzmPlayerViewController *lastPlayer;
+    NSButton *openFileBtn;
 }
 
 - (void)viewDidLoad {
@@ -31,7 +32,7 @@
 
 - (void)setUpViews {
     // add a button for select file
-    NSButton *openFileBtn = [[NSButton alloc] init];
+    openFileBtn = [[NSButton alloc] init];
     [openFileBtn setTitle:@"Choose movie"];
     [self.view addSubview:openFileBtn];
     [openFileBtn mas_makeConstraints:^(MASConstraintMaker *make) {
@@ -52,7 +53,7 @@
     [panel setCanChooseFiles:YES];
     [panel setCanChooseDirectories:NO];
     [panel setAllowsMultipleSelection:NO];
-    [panel setAllowedFileTypes:@[@"mp4",@"mkv",@"avi",@"rmvb"]];
+    [panel setAllowedFileTypes:@[@"mov",@"mp4",@"mkv",@"avi",@"rmvb"]];
     [panel setTitle:@"choose a movie"];
     NSInteger clicked = [panel runModal];
     
@@ -80,6 +81,7 @@
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
         [lastPlayer play];
     });
+    [self.view addSubview:openFileBtn];
 }
 
 
