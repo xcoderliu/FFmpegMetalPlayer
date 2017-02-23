@@ -86,7 +86,6 @@
 
 @interface lzmMovieGLRenderer_RGB : NSObject<lzmMovieGLRenderer> {
     
- 
 }
 @end
 
@@ -101,8 +100,6 @@
 - (BOOL) prepareRender{
     return YES;
 }
-
-
 
 @end
 
@@ -148,6 +145,7 @@
     id<MTLCommandBuffer>        commandBuffer;
     id <MTLTexture>             _texture;
     MTKTextureLoader            *textureLoad;
+    NSLock                      *renderLock;
 }
 
 
@@ -176,17 +174,41 @@
         }
         
         [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(windowResized:) name:NSWindowDidResizeNotification object:[self window]];
-       
+        renderLock = [[NSLock alloc] init];
     }
     return self;
 }
 
 - (BOOL)initMetal:(CGRect)frame {
+    // init metal
+    
     device =  MTLCreateSystemDefaultDevice();
+    if (!device)
+        return NO;
+    
     commandQueue = [device newCommandQueue];
+    if (!commandQueue)
+        return NO;
+    
     commandBuffer = [commandQueue commandBuffer];
+    if (!commandBuffer)
+        return NO;
+    
     textureLoad = [[MTKTextureLoader alloc] initWithDevice:device];
+    if (!textureLoad)
+        return NO;
+    
     metalView = [[MTKView alloc] initWithFrame:self.bounds device:device];
+    if (!metalView)
+        return NO;
+
+    [metalView setFramebufferOnly:NO];
+    metalView.delegate = self;
+    metalView.depthStencilPixelFormat = /*MTLPixelFormatBGRG422*/MTLPixelFormatStencil8;
+    metalView.colorPixelFormat = MTLPixelFormatBGRA8Unorm;
+    [metalView setAutoResizeDrawable:YES];
+    [metalView setClearColor:MTLClearColorMake(0.15f, 0.15f, 0.15f, 1)];
+    
     [self addSubview:metalView];
     [metalView mas_makeConstraints:^(MASConstraintMaker *make) {
         make.centerX.equalTo(self);
@@ -194,12 +216,7 @@
         make.width.equalTo(self);
         make.height.equalTo(self);
     }];
-    [metalView setFramebufferOnly:NO];
-    metalView.delegate = self;
-    metalView.depthStencilPixelFormat = /*MTLPixelFormatBGRG422*/MTLPixelFormatStencil8;
-    metalView.colorPixelFormat = MTLPixelFormatBGRA8Unorm;
-    [metalView setAutoResizeDrawable:YES];
-    [metalView setClearColor:MTLClearColorMake(0.15f, 0.15f, 0.15f, 1)];
+    
     return YES;
 }
 
@@ -220,8 +237,6 @@
 
 - (void)windowResized:(NSNotification *)notification
 {
-    NSSize size = [[self window] frame].size;
-    NSLog(@"window width = %f, window height = %f", size.width, size.height);
     [metalView releaseDrawables];
     [metalView setPaused:NO];
 }
@@ -236,11 +251,13 @@
     //得到MetalPerformanceShaders需要使用的命令缓存区
     commandBuffer = [commandQueue commandBuffer];
     
+    //to clear the back ground color
     id<MTLRenderCommandEncoder> commandEncoder = [commandBuffer renderCommandEncoderWithDescriptor:view.currentRenderPassDescriptor];
     [commandEncoder endEncoding];
     
+    [renderLock lock];
     if (_texture) {
-        metalView.colorPixelFormat = [_texture pixelFormat];
+        [metalView setColorPixelFormat:[_texture pixelFormat]];
         id <MTLTexture> desTexture = [view.currentDrawable texture];
         if ([[_texture device] isEqual:[[view.currentDrawable texture] device]] && [_texture width] == [desTexture width] && [_texture height] == [desTexture height]) {
             
@@ -253,6 +270,8 @@
             [metalView releaseDrawables];
         }
     }
+    [renderLock unlock];
+    
     [commandBuffer presentDrawable:view.currentDrawable];
     [commandBuffer commit];
 }
@@ -262,21 +281,29 @@
 - (void)metalrender: (lzmVideoFrame *) frame {
     if (frame) {
         lzmVideoFrameRGB *rgbFrame = (lzmVideoFrameRGB *)frame;
-        dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0), ^{
+        
+        // use a background thread to caculate the scaled image
+        dispatch_sync(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0), ^{
             [self loadTexture:rgbFrame];
         });
     }
 }
 
 - (BOOL)loadTexture:(lzmVideoFrameRGB*)rgbFrame {
-    BOOL loadSuccess = NO;
+    
     NSError *error = nil;
     NSImage *image = [rgbFrame asImage];
     NSData *imageData = [[image imageByScalingProportionallyToSize:self.bounds.size] TIFFRepresentation];
+    
+    [renderLock lock];
     _texture = [textureLoad newTextureWithData:imageData options:nil error:&error];
-    if (!error) {
-        loadSuccess = YES;
+    [renderLock unlock];
+    
+    if (error) {
+        return NO;
     }
+    
+    // the draw method should be call on mainthread
     dispatch_async(dispatch_get_main_queue(), ^{
         if (!metalView.isPaused) {
             [metalView draw];
@@ -285,7 +312,7 @@
         }
     });
     
-    return loadSuccess;
+    return YES;
 }
 
 @end

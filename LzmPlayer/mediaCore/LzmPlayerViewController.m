@@ -89,7 +89,7 @@ static NSMutableDictionary * gHistory;
     BOOL                _restoreIdleTimer;
     BOOL                _interrupted;
     
-    LzmMediaMetalView       *_glView;
+    LzmMediaMetalView   *_metalView;
     NSImageView         *_imageView;
     NSView              *_topHUD;
     NSToolbar           *_topBar;
@@ -187,7 +187,7 @@ static NSMutableDictionary * gHistory;
 
 - (NSView *) frameView
 {
-    return _glView ? _glView : _imageView;
+    return _metalView ? _metalView : _imageView;
 }
 
 
@@ -196,10 +196,10 @@ static NSMutableDictionary * gHistory;
     CGRect bounds = self.view.bounds;
     
     if (_decoder.validVideo) {
-        _glView = [[LzmMediaMetalView alloc] initWithFrame:bounds decoder:_decoder];
+        _metalView = [[LzmMediaMetalView alloc] initWithFrame:bounds decoder:_decoder];
     }
     
-    if (!_glView) {
+    if (!_metalView) {
         
         [_decoder setupVideoFrameFormat:lzmVideoFrameFormatRGB];
         _imageView = [[NSImageView alloc] initWithFrame:bounds];
@@ -763,9 +763,9 @@ static NSMutableDictionary * gHistory;
 
 - (CGFloat) presentVideoFrame: (lzmVideoFrame *) frame
 {
-    if (_glView) {
+    if (_metalView) {
         
-        [_glView metalrender:frame];
+        [_metalView metalrender:frame];
         
     } else {
         
