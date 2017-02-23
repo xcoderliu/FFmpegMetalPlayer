@@ -8,7 +8,6 @@
 
 /* Begin PBXBuildFile section */
 		F81F67C81E5C25960012D94F /* Metal.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F81F67C71E5C25960012D94F /* Metal.framework */; };
-		F81F67CA1E5C36F60012D94F /* TexturedQuadShader.metal in Sources */ = {isa = PBXBuildFile; fileRef = F81F67C91E5C36F60012D94F /* TexturedQuadShader.metal */; };
 		F883C8261E4962560048BA4F /* libmp3lame.a in Frameworks */ = {isa = PBXBuildFile; fileRef = F883C8231E4962560048BA4F /* libmp3lame.a */; };
 		F883C8271E4962560048BA4F /* libx264.a in Frameworks */ = {isa = PBXBuildFile; fileRef = F883C8241E4962560048BA4F /* libx264.a */; };
 		F883C8281E4962560048BA4F /* libxvidcore.a in Frameworks */ = {isa = PBXBuildFile; fileRef = F883C8251E4962560048BA4F /* libxvidcore.a */; };
@@ -82,7 +81,6 @@
 
 /* Begin PBXFileReference section */
 		F81F67C71E5C25960012D94F /* Metal.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Metal.framework; path = System/Library/Frameworks/Metal.framework; sourceTree = SDKROOT; };
-		F81F67C91E5C36F60012D94F /* TexturedQuadShader.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; path = TexturedQuadShader.metal; sourceTree = "<group>"; };
 		F883C8231E4962560048BA4F /* libmp3lame.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libmp3lame.a; path = ffmpeg/libmp3lame.a; sourceTree = "<group>"; };
 		F883C8241E4962560048BA4F /* libx264.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libx264.a; path = ffmpeg/libx264.a; sourceTree = "<group>"; };
 		F883C8251E4962560048BA4F /* libxvidcore.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libxvidcore.a; path = ffmpeg/libxvidcore.a; sourceTree = "<group>"; };
@@ -111,7 +109,7 @@
 		F8B004891E484A7500AFF606 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		F8C2F3B31E4C38BC009E48AB /* libbz2.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libbz2.tbd; path = usr/lib/libbz2.tbd; sourceTree = SDKROOT; };
 		F8C2F3B51E4C38DF009E48AB /* VideoDecodeAcceleration.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = VideoDecodeAcceleration.framework; path = System/Library/Frameworks/VideoDecodeAcceleration.framework; sourceTree = SDKROOT; };
-		F8CE6AF81E485DD400ADA634 /* Masonry.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Masonry.framework; path = ../Carthage/Build/Mac/Masonry.framework; sourceTree = "<group>"; };
+		F8CE6AF81E485DD400ADA634 /* Masonry.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Masonry.framework; path = Carthage/Build/Mac/Masonry.framework; sourceTree = "<group>"; };
 		F8CE6AFB1E48629E00ADA634 /* LzmPlayer.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = LzmPlayer.entitlements; sourceTree = "<group>"; };
 		F8CE6BA71E49564300ADA634 /* libavcodec.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libavcodec.a; path = ffmpeg/libavcodec.a; sourceTree = "<group>"; };
 		F8CE6BA81E49564300ADA634 /* libavdevice.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libavdevice.a; path = ffmpeg/libavdevice.a; sourceTree = "<group>"; };
@@ -192,7 +190,6 @@
 		F883C8291E49B6FE0048BA4F /* mediaCore */ = {
 			isa = PBXGroup;
 			children = (
-				F81F67C91E5C36F60012D94F /* TexturedQuadShader.metal */,
 				F883C82A1E49B6FE0048BA4F /* LzmAudioManager.h */,
 				F883C82B1E49B6FE0048BA4F /* LzmAudioManager.m */,
 				F883C82C1E49B6FE0048BA4F /* LzmMediaDecoder.h */,
@@ -258,7 +255,6 @@
 				F8CE6BAD1E49564300ADA634 /* libpostproc.a */,
 				F8CE6BAE1E49564300ADA634 /* libswresample.a */,
 				F8CE6BAF1E49564300ADA634 /* libswscale.a */,
-				F8CE6AF81E485DD400ADA634 /* Masonry.framework */,
 				F8B004691E484A7500AFF606 /* main.m */,
 			);
 			name = "Supporting Files";
@@ -285,6 +281,7 @@
 		F8CE6AFC1E48B0FD00ADA634 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				F8CE6AF81E485DD400ADA634 /* Masonry.framework */,
 				F81F67C71E5C25960012D94F /* Metal.framework */,
 				F8CE6BBD1E4956AE00ADA634 /* libiconv.tbd */,
 				F8CE6BBB1E49569B00ADA634 /* libz.tbd */,
@@ -464,7 +461,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				F81F67CA1E5C36F60012D94F /* TexturedQuadShader.metal in Sources */,
 				F883C8341E49B6FE0048BA4F /* LzmMediaMetalView.m in Sources */,
 				F883C8321E49B6FE0048BA4F /* LzmAudioManager.m in Sources */,
 				F8B0046D1E484A7500AFF606 /* ViewController.m in Sources */,

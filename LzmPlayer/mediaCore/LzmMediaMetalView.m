@@ -10,11 +10,75 @@
 #import <QuartzCore/QuartzCore.h>
 #import <Metal/Metal.h>
 #import <MetalKit/MetalKit.h>
-//#import <simd/simd.h>
 #import "LzmMediaDecoder.h"
 
 //////////////////////////////////////////////////////////
 
+@implementation NSImage (ProportionalScaling)
+
+- (NSImage*)imageByScalingProportionallyToSize:(NSSize)targetSize
+{
+    NSImage* sourceImage = self;
+    NSImage* newImage = nil;
+    
+    if ([sourceImage isValid])
+    {
+        NSSize imageSize = [sourceImage size];
+        float width  = imageSize.width;
+        float height = imageSize.height;
+        
+        float targetWidth  = targetSize.width;
+        float targetHeight = targetSize.height;
+        
+        float scaleFactor  = 0.0;
+        float scaledWidth  = targetWidth;
+        float scaledHeight = targetHeight;
+        
+        NSPoint thumbnailPoint = NSZeroPoint;
+        
+        if ( NSEqualSizes( imageSize, targetSize ) == NO )
+        {
+            
+            float widthFactor  = targetWidth / width;
+            float heightFactor = targetHeight / height;
+            
+            if ( widthFactor < heightFactor )
+                scaleFactor = widthFactor;
+            else
+                scaleFactor = heightFactor;
+            
+            scaledWidth  = width  * scaleFactor;
+            scaledHeight = height * scaleFactor;
+            
+            if ( widthFactor < heightFactor )
+                thumbnailPoint.y = (targetHeight - scaledHeight) * 0.5;
+            
+            else if ( widthFactor > heightFactor )
+                thumbnailPoint.x = (targetWidth - scaledWidth) * 0.5;
+        }
+        
+        newImage = [[NSImage alloc] initWithSize:targetSize];
+        
+        [newImage lockFocus];
+        
+        NSRect thumbnailRect;
+        thumbnailRect.origin = thumbnailPoint;
+        thumbnailRect.size.width = scaledWidth;
+        thumbnailRect.size.height = scaledHeight;
+        
+        [sourceImage drawInRect: thumbnailRect
+                       fromRect: NSZeroRect
+                      operation: NSCompositeSourceOver
+                       fraction: 1.0];
+        
+        [newImage unlockFocus];
+        
+    }
+    
+    return newImage;
+}
+
+@end
 
 #pragma mark - frame renderers
 
@@ -85,10 +149,8 @@
     id <MTLCommandQueue>        commandQueue;
     MTKView                     *metalView;
     id<MTLCommandBuffer>        commandBuffer;
-    id <CAMetalDrawable>        metaldrawable;
-
     id <MTLTexture>             _texture;
-    MTKTextureLoader *textureLoad;
+    MTKTextureLoader            *textureLoad;
 }
 
 
@@ -125,15 +187,24 @@
     commandQueue = [device newCommandQueue];
     commandBuffer = [commandQueue commandBuffer];
     textureLoad = [[MTKTextureLoader alloc] initWithDevice:device];
+    metalView = [[MTKView alloc] initWithFrame:self.bounds device:device];
+    [self addSubview:metalView];
+    [metalView setFramebufferOnly:NO];
+    metalView.delegate = self;
+    metalView.depthStencilPixelFormat = /*MTLPixelFormatBGRG422*/MTLPixelFormatStencil8;
+    metalView.colorPixelFormat = MTLPixelFormatBGRA8Unorm;
+    [metalView setAutoResizeDrawable:YES];
+    [metalView setClearColor:MTLClearColorMake(0.65f, 0.65f, 0.65f, 1)];
     return YES;
 }
+
+
 
 - (void)dealloc
 {
     _renderer = nil;
-    
-    
-    [[NSNotificationCenter defaultCenter] removeObserver:self];
+    [metalView setPaused:YES];
+    [metalView releaseDrawables];
 }
 
 - (void)mtkView:(nonnull MTKView *)view drawableSizeWillChange:(CGSize)size
@@ -142,11 +213,26 @@
 }
 - (void)drawInMTKView:(nonnull MTKView *)view
 {
+    if (metalView.isPaused) {
+        return;
+    }
     //得到MetalPerformanceShaders需要使用的命令缓存区
     commandBuffer = [commandQueue commandBuffer];
-    id<MTLBlitCommandEncoder> encoder = [commandBuffer blitCommandEncoder];
-    [encoder copyFromTexture:_texture sourceSlice:0 sourceLevel:0 sourceOrigin:MTLOriginMake(0, 0, 0) sourceSize:MTLSizeMake([_texture width], [_texture height], [_texture depth]) toTexture:[view.currentDrawable texture] destinationSlice:0 destinationLevel:0 destinationOrigin:MTLOriginMake(0, 0, 0)];
-    [encoder endEncoding];
+
+    if (_texture) {
+        metalView.colorPixelFormat = [_texture pixelFormat];
+        
+       
+        if ([[_texture device] isEqual:[[view.currentDrawable texture] device]]) {
+             id<MTLBlitCommandEncoder> blitEncoder = [commandBuffer blitCommandEncoder];
+            [blitEncoder copyFromTexture:_texture sourceSlice:0 sourceLevel:0 sourceOrigin:MTLOriginMake(0, 0, 0) sourceSize:MTLSizeMake([_texture width], [_texture height], [_texture depth]) toTexture:[view.currentDrawable texture] destinationSlice:0 destinationLevel:0 destinationOrigin:MTLOriginMake(0, 0, 0)];
+            [blitEncoder endEncoding];
+        } else {
+            [metalView releaseDrawables];
+        }
+        
+    }
+    
     [commandBuffer presentDrawable:view.currentDrawable];
     [commandBuffer commit];
 }
@@ -154,17 +240,11 @@
 
 
 - (void)metalrender: (lzmVideoFrame *) frame {
-    if (!metalView) {
-        metalView = [[MTKView alloc] initWithFrame:self.bounds device:device];
-        [self addSubview:metalView];
-        [metalView setFramebufferOnly:NO];
-        metalView.delegate = self;
-        metalView.depthStencilPixelFormat = MTLPixelFormatBGRG422;
-        metalView.colorPixelFormat = MTLPixelFormatBGRA8Unorm_sRGB;
-    }
     if (frame) {
         lzmVideoFrameRGB *rgbFrame = (lzmVideoFrameRGB *)frame;
-        [self loadTexture:rgbFrame];
+        dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0), ^{
+            [self loadTexture:rgbFrame];
+        });
     }
 }
 
@@ -172,13 +252,18 @@
     BOOL loadSuccess = NO;
     NSError *error = nil;
     NSImage *image = [rgbFrame asImage];
-    NSData *imageData = [image TIFFRepresentation];
+    NSData *imageData = [[image imageByScalingProportionallyToSize:self.bounds.size] TIFFRepresentation];
     _texture = [textureLoad newTextureWithData:imageData options:nil error:&error];
     if (!error) {
         loadSuccess = YES;
     }
-    [metalView draw];
+    dispatch_async(dispatch_get_main_queue(), ^{
+        [metalView draw];
+    });
+    
     return loadSuccess;
 }
 
 @end
+
+
