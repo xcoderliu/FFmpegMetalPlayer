@@ -11,7 +11,7 @@
 #import <QuartzCore/QuartzCore.h>
 #import "LzmMediaDecoder.h"
 #import "LzmAudioManager.h"
-#import "LzmMediaGLView.h"
+#import "LzmMediaMetalView.h"
 
 NSString * const lzmMovieParameterMinBufferedDuration = @"lzmMovieParameterMinBufferedDuration";
 NSString * const lzmMovieParameterMaxBufferedDuration = @"lzmMovieParameterMaxBufferedDuration";
@@ -88,7 +88,7 @@ static NSMutableDictionary * gHistory;
     BOOL                _restoreIdleTimer;
     BOOL                _interrupted;
     
-    LzmMediaGLView       *_glView;
+    LzmMediaMetalView       *_glView;
     NSImageView         *_imageView;
     NSView              *_topHUD;
     NSToolbar           *_topBar;
@@ -195,9 +195,9 @@ static NSMutableDictionary * gHistory;
     CGRect bounds = self.view.bounds;
     
     if (_decoder.validVideo) {
-        _glView = [[LzmMediaGLView alloc] initWithFrame:bounds decoder:_decoder];
+        _glView = [[LzmMediaMetalView alloc] initWithFrame:bounds decoder:_decoder];
         //坑是在太多暂时屏蔽掉openGL
-        _glView = nil;
+//        _glView = nil;
     }
     
     if (!_glView) {
@@ -759,7 +759,7 @@ static NSMutableDictionary * gHistory;
 {
     if (_glView) {
         
-        [_glView render:frame];
+        [_glView metalrender:frame];
         
     } else {
         

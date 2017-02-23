@@ -1,5 +1,5 @@
 //
-//  LzmMediaGLView.h
+//  LzmMediaMetalView.h
 //  LzmPlayer
 //
 //  Created by 刘智民 on 2/6/17.
@@ -10,9 +10,9 @@
 @class lzmVideoFrame;
 @class LzmMediaDecoder;
 
-@interface LzmMediaGLView : NSView
+@interface LzmMediaMetalView : NSView
 - (id) initWithFrame:(CGRect)frame
              decoder: (LzmMediaDecoder *) decoder;
 
-- (void) render: (lzmVideoFrame *) frame;
+- (void)metalrender: (lzmVideoFrame *) frame;
 @end
