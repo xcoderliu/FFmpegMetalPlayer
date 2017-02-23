@@ -206,7 +206,7 @@
     metalView.delegate = self;
     metalView.depthStencilPixelFormat = /*MTLPixelFormatBGRG422*/MTLPixelFormatStencil8;
     metalView.colorPixelFormat = MTLPixelFormatBGRA8Unorm;
-    [metalView setAutoResizeDrawable:YES];
+    [metalView setAutoResizeDrawable:NO];
     [metalView setClearColor:MTLClearColorMake(0.15f, 0.15f, 0.15f, 1)];
     
     [self addSubview:metalView];
@@ -243,7 +243,6 @@
 
 - (void)mtkView:(MTKView *)view drawableSizeWillChange:(CGSize)size {
     [metalView releaseDrawables];
-    [metalView setPaused:YES];
 }
 
 - (void)drawInMTKView:(nonnull MTKView *)view
@@ -257,17 +256,21 @@
     
     [renderLock lock];
     if (_texture) {
-        [metalView setColorPixelFormat:[_texture pixelFormat]];
-        id <MTLTexture> desTexture = [view.currentDrawable texture];
-        if ([[_texture device] isEqual:[[view.currentDrawable texture] device]] && [_texture width] == [desTexture width] && [_texture height] == [desTexture height]) {
-            
-             id<MTLBlitCommandEncoder> blitEncoder = [commandBuffer blitCommandEncoder];
-            
-            [blitEncoder copyFromTexture:_texture sourceSlice:0 sourceLevel:0 sourceOrigin:MTLOriginMake(0, 0, 0) sourceSize:MTLSizeMake([_texture width], [_texture height], [_texture depth]) toTexture:desTexture destinationSlice:0 destinationLevel:0 destinationOrigin:MTLOriginMake(0, 0, 0)];
-            [blitEncoder endEncoding];
-            
-        } else {
+        [metalView setDrawableSize:CGSizeMake([_texture width], [_texture height])];
+        if ([metalView colorPixelFormat] != [_texture pixelFormat]) {
+            [metalView setColorPixelFormat:[_texture pixelFormat]];
             [metalView releaseDrawables];
+        } else {
+            if ([[_texture device] isEqual:[[view.currentDrawable texture] device]]/* && [_texture width] == [desTexture width] && [_texture height] == [desTexture height]*/) {
+                
+                id<MTLBlitCommandEncoder> blitEncoder = [commandBuffer blitCommandEncoder];
+                
+                [blitEncoder copyFromTexture:_texture sourceSlice:0 sourceLevel:0 sourceOrigin:MTLOriginMake(0, 0, 0) sourceSize:MTLSizeMake([_texture width], [_texture height], [_texture depth]) toTexture:[view.currentDrawable texture] destinationSlice:0 destinationLevel:0 destinationOrigin:MTLOriginMake(0, 0, 0)];
+                [blitEncoder endEncoding];
+                
+            } else {
+                [metalView releaseDrawables];
+            }
         }
     }
     [renderLock unlock];
@@ -293,10 +296,10 @@
     
     NSError *error = nil;
     NSImage *image = [rgbFrame asImage];
-    NSData *imageData = [[image imageByScalingProportionallyToSize:self.bounds.size] TIFFRepresentation];
+    NSData *imageData = [image TIFFRepresentation];
     
     [renderLock lock];
-    _texture = [textureLoad newTextureWithData:imageData options:nil error:&error];
+    _texture = [textureLoad newTextureWithData:imageData options:@{MTKTextureLoaderOptionSRGB:@1} error:&error];
     [renderLock unlock];
     
     if (error) {
