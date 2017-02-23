@@ -15,4 +15,5 @@
              decoder: (LzmMediaDecoder *) decoder;
 
 - (void)metalrender: (lzmVideoFrame *) frame;
+
 @end

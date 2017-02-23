@@ -12,6 +12,7 @@
 #import "LzmMediaDecoder.h"
 #import "LzmAudioManager.h"
 #import "LzmMediaMetalView.h"
+#import <Masonry/Masonry.h>
 
 NSString * const lzmMovieParameterMinBufferedDuration = @"lzmMovieParameterMinBufferedDuration";
 NSString * const lzmMovieParameterMaxBufferedDuration = @"lzmMovieParameterMaxBufferedDuration";
@@ -196,8 +197,6 @@ static NSMutableDictionary * gHistory;
     
     if (_decoder.validVideo) {
         _glView = [[LzmMediaMetalView alloc] initWithFrame:bounds decoder:_decoder];
-        //坑是在太多暂时屏蔽掉openGL
-//        _glView = nil;
     }
     
     if (!_glView) {
@@ -213,6 +212,13 @@ static NSMutableDictionary * gHistory;
 //    
 //    [self.view insertSubview:frameView atIndex:0];
     [self.view addSubview:frameView positioned:NSWindowAbove relativeTo:nil];
+    
+    [frameView mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.centerX.equalTo(self.view);
+        make.centerY.equalTo(self.view);
+        make.width.equalTo(self.view);
+        make.height.equalTo(self.view);
+    }];
     
     if (_decoder.validVideo) {
         

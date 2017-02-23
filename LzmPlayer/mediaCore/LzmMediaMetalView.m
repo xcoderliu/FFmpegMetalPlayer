@@ -5,7 +5,7 @@
 //  Created by 刘智民 on 2/6/17.
 //  Copyright © 2017 刘智民. All rights reserved.
 //
-#import <simd/simd.h>
+#import <Masonry/Masonry.h>
 #import "LzmMediaMetalView.h"
 #import <QuartzCore/QuartzCore.h>
 #import <Metal/Metal.h>
@@ -20,7 +20,6 @@
 {
     NSImage* sourceImage = self;
     NSImage* newImage = nil;
-    
     if ([sourceImage isValid])
     {
         NSSize imageSize = [sourceImage size];
@@ -72,9 +71,7 @@
                        fraction: 1.0];
         
         [newImage unlockFocus];
-        
     }
-    
     return newImage;
 }
 
@@ -177,6 +174,8 @@
             self = nil;
             return nil;
         }
+        
+        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(windowResized:) name:NSWindowDidResizeNotification object:[self window]];
        
     }
     return self;
@@ -189,12 +188,18 @@
     textureLoad = [[MTKTextureLoader alloc] initWithDevice:device];
     metalView = [[MTKView alloc] initWithFrame:self.bounds device:device];
     [self addSubview:metalView];
+    [metalView mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.centerX.equalTo(self);
+        make.centerY.equalTo(self);
+        make.width.equalTo(self);
+        make.height.equalTo(self);
+    }];
     [metalView setFramebufferOnly:NO];
     metalView.delegate = self;
     metalView.depthStencilPixelFormat = /*MTLPixelFormatBGRG422*/MTLPixelFormatStencil8;
     metalView.colorPixelFormat = MTLPixelFormatBGRA8Unorm;
     [metalView setAutoResizeDrawable:YES];
-    [metalView setClearColor:MTLClearColorMake(0.65f, 0.65f, 0.65f, 1)];
+    [metalView setClearColor:MTLClearColorMake(0.15f, 0.15f, 0.15f, 1)];
     return YES;
 }
 
@@ -205,34 +210,49 @@
     _renderer = nil;
     [metalView setPaused:YES];
     [metalView releaseDrawables];
+    [[NSNotificationCenter defaultCenter] removeObserver:self];
 }
 
-- (void)mtkView:(nonnull MTKView *)view drawableSizeWillChange:(CGSize)size
-{
-    
+- (void)viewDidMoveToWindow {
+    [super viewDidMoveToWindow];
+    [metalView setPaused:NO];
 }
+
+- (void)windowResized:(NSNotification *)notification
+{
+    NSSize size = [[self window] frame].size;
+    NSLog(@"window width = %f, window height = %f", size.width, size.height);
+    [metalView releaseDrawables];
+    [metalView setPaused:NO];
+}
+
+- (void)mtkView:(MTKView *)view drawableSizeWillChange:(CGSize)size {
+    [metalView releaseDrawables];
+    [metalView setPaused:YES];
+}
+
 - (void)drawInMTKView:(nonnull MTKView *)view
 {
-    if (metalView.isPaused) {
-        return;
-    }
     //得到MetalPerformanceShaders需要使用的命令缓存区
     commandBuffer = [commandQueue commandBuffer];
-
+    
+    id<MTLRenderCommandEncoder> commandEncoder = [commandBuffer renderCommandEncoderWithDescriptor:view.currentRenderPassDescriptor];
+    [commandEncoder endEncoding];
+    
     if (_texture) {
         metalView.colorPixelFormat = [_texture pixelFormat];
-        
-       
-        if ([[_texture device] isEqual:[[view.currentDrawable texture] device]]) {
+        id <MTLTexture> desTexture = [view.currentDrawable texture];
+        if ([[_texture device] isEqual:[[view.currentDrawable texture] device]] && [_texture width] == [desTexture width] && [_texture height] == [desTexture height]) {
+            
              id<MTLBlitCommandEncoder> blitEncoder = [commandBuffer blitCommandEncoder];
-            [blitEncoder copyFromTexture:_texture sourceSlice:0 sourceLevel:0 sourceOrigin:MTLOriginMake(0, 0, 0) sourceSize:MTLSizeMake([_texture width], [_texture height], [_texture depth]) toTexture:[view.currentDrawable texture] destinationSlice:0 destinationLevel:0 destinationOrigin:MTLOriginMake(0, 0, 0)];
+            
+            [blitEncoder copyFromTexture:_texture sourceSlice:0 sourceLevel:0 sourceOrigin:MTLOriginMake(0, 0, 0) sourceSize:MTLSizeMake([_texture width], [_texture height], [_texture depth]) toTexture:desTexture destinationSlice:0 destinationLevel:0 destinationOrigin:MTLOriginMake(0, 0, 0)];
             [blitEncoder endEncoding];
+            
         } else {
             [metalView releaseDrawables];
         }
-        
     }
-    
     [commandBuffer presentDrawable:view.currentDrawable];
     [commandBuffer commit];
 }
@@ -258,7 +278,11 @@
         loadSuccess = YES;
     }
     dispatch_async(dispatch_get_main_queue(), ^{
-        [metalView draw];
+        if (!metalView.isPaused) {
+            [metalView draw];
+        } else {
+            [metalView releaseDrawables];
+        }
     });
     
     return loadSuccess;
