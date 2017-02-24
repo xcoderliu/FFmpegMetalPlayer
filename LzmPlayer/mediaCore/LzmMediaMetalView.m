@@ -17,51 +17,42 @@
 
 #pragma mark - frame renderers
 
-@protocol lzmMovieGLRenderer
-- (void) setFrame: (lzmVideoFrame *) frame;
-- (BOOL) prepareRender;
+@protocol lzmMovieMetalData
+- (NSData*)frameData:(lzmVideoFrame*)frame;
 @end
 
-@interface lzmMovieGLRenderer_RGB : NSObject<lzmMovieGLRenderer> {
+@interface lzmMovieMetalData_RGB : NSObject<lzmMovieMetalData> {
     
 }
 @end
 
-@implementation lzmMovieGLRenderer_RGB
+@implementation lzmMovieMetalData_RGB
 
-- (void) setFrame: (lzmVideoFrame *) frame{
+- (NSData*)frameData:(lzmVideoFrame*)frame {
     lzmVideoFrameRGB *rgbFrame = (lzmVideoFrameRGB *)frame;
     assert(rgbFrame.rgb.length == rgbFrame.width * rgbFrame.height * 3);
-    
+    NSImage *image = [rgbFrame asImage];
+    NSData *imageData = [image TIFFRepresentation];
+    return imageData;
 }
 
-- (BOOL) prepareRender{
-    return YES;
-}
 
 @end
 
-@interface lzmMovieGLRenderer_YUV : NSObject<lzmMovieGLRenderer> {
+@interface lzmMovieMetalData_YUV : NSObject<lzmMovieMetalData> {
     
 }
 @end
 
-@implementation lzmMovieGLRenderer_YUV
+@implementation lzmMovieMetalData_YUV
 
-- (void) setFrame: (lzmVideoFrame *) frame
-{
+- (NSData*)frameData:(lzmVideoFrame*)frame {
     lzmVideoFrameYUV *yuvFrame = (lzmVideoFrameYUV *)frame;
-    
     assert(yuvFrame.luma.length == yuvFrame.width * yuvFrame.height);
     assert(yuvFrame.chromaB.length == (yuvFrame.width * yuvFrame.height) / 4);
     assert(yuvFrame.chromaR.length == (yuvFrame.width * yuvFrame.height) / 4);
-    
+    return nil;
 }
-
-- (BOOL) prepareRender{
-    return YES;
-}
-
 
 @end
 
@@ -76,7 +67,7 @@
 @implementation LzmMediaMetalView {
     
     LzmMediaDecoder            *_decoder;
-    id<lzmMovieGLRenderer>      _renderer;
+    id<lzmMovieMetalData>      _renderer;
     id<MTLDevice>               device;
     id <MTLCommandQueue>        commandQueue;
     MTKView                     *metalView;
@@ -95,15 +86,13 @@
         
         _decoder = decoder;
         
-        if (/*[decoder setupVideoFrameFormat:lzmVideoFrameFormatYUV]*//* DISABLES CODE */ (0)) {
-            
-            _renderer = [[lzmMovieGLRenderer_YUV alloc] init];
-            NSLog(@"OK use YUV GL renderer");
+        if ([decoder setupVideoFrameFormat:lzmVideoFrameFormatRGB]) {
+            _renderer = [[lzmMovieMetalData_RGB alloc] init];
+            NSLog(@"OK use RGB renderer");
             
         } else {
-            
-            _renderer = [[lzmMovieGLRenderer_RGB alloc] init];
-            NSLog(@"OK use RGB GL renderer");
+            _renderer = [[lzmMovieMetalData_YUV alloc] init];
+            NSLog(@"OK use YUV GL renderer");
         }
         
         if (![self initMetal:frame]) {
@@ -221,29 +210,30 @@
 
 - (void)metalrender: (lzmVideoFrame *) frame {
     if (frame) {
-        lzmVideoFrameRGB *rgbFrame = (lzmVideoFrameRGB *)frame;
-        
         // use a background thread to caculate the scaled image
-        dispatch_sync(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0), ^{
-            [self loadTexture:rgbFrame];
+        dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+            [self loadTexture:frame];
         });
     }
 }
 
-- (BOOL)loadTexture:(lzmVideoFrameRGB*)rgbFrame {
-    
-    NSError *error = nil;
-    NSImage *image = [rgbFrame asImage];
-    NSData *imageData = [image TIFFRepresentation];
-    
+- (BOOL)loadTexture:(lzmVideoFrame*)frame
+{
+    NSError *error;
     [renderLock lock];
-    _texture = [textureLoad newTextureWithData:imageData options:@{MTKTextureLoaderOptionSRGB:@1} error:&error];
+    _texture = [textureLoad newTextureWithData:[_renderer frameData:frame] options:nil error:&error];
     [renderLock unlock];
     
     if (error) {
         return NO;
     }
     
+    [self renderFrame];
+    
+    return YES;
+}
+
+- (void)renderFrame {
     // the draw method should be call on mainthread
     dispatch_async(dispatch_get_main_queue(), ^{
         if (!metalView.isPaused) {
@@ -252,8 +242,6 @@
             [metalView releaseDrawables];
         }
     });
-    
-    return YES;
 }
 
 @end
