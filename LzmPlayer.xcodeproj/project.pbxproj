@@ -92,6 +92,7 @@
 		F883C82F1E49B6FE0048BA4F /* LzmMediaMetalView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = LzmMediaMetalView.m; sourceTree = "<group>"; };
 		F883C8301E49B6FE0048BA4F /* LzmPlayerViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = LzmPlayerViewController.h; sourceTree = "<group>"; };
 		F883C8311E49B6FE0048BA4F /* LzmPlayerViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = LzmPlayerViewController.m; sourceTree = "<group>"; };
+		F89603011E6024B500E72310 /* useless.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = useless.h; sourceTree = "<group>"; };
 		F8B004621E484A7500AFF606 /* LzmPlayer.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = LzmPlayer.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		F8B004651E484A7500AFF606 /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
 		F8B004661E484A7500AFF606 /* AppDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AppDelegate.m; sourceTree = "<group>"; };
@@ -198,6 +199,7 @@
 				F883C82F1E49B6FE0048BA4F /* LzmMediaMetalView.m */,
 				F883C8301E49B6FE0048BA4F /* LzmPlayerViewController.h */,
 				F883C8311E49B6FE0048BA4F /* LzmPlayerViewController.m */,
+				F89603011E6024B500E72310 /* useless.h */,
 			);
 			path = mediaCore;
 			sourceTree = "<group>";

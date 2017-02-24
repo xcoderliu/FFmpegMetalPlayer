@@ -44,7 +44,7 @@
     [openFileBtn setTarget:self];
     [openFileBtn setAction:@selector(chooseMovie)];
     //test code
-//    [self openMediaWithUrl:[NSURL fileURLWithPath:@"/Users/liuzhimin/Downloads/SE1101.mp4"]];
+    [self openMediaWithUrl:[NSURL fileURLWithPath:@"/Users/liuzhimin/Downloads/SE1101.mp4"]];
 }
 
 - (void)chooseMovie {
