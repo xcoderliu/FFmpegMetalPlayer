@@ -424,7 +424,7 @@ static int interrupt_callback(void *ctx);
             
             if (_formatCtx->bit_rate) {
                 
-                [md setValue: [NSNumber numberWithInt:_formatCtx->bit_rate]
+                [md setValue: [NSNumber numberWithInt:(int)(_formatCtx->bit_rate)]
                       forKey: @"bitrate"];
             }
             
@@ -597,7 +597,7 @@ static int interrupt_callback(void *ctx);
             errCode = videoErr; // both fails
             
         } else {
-            
+            // 尝试打开字幕信息
             _subtitleStreams = collectStreams(_formatCtx, AVMEDIA_TYPE_SUBTITLE);
         }
     }
@@ -633,8 +633,8 @@ static int interrupt_callback(void *ctx);
         if (formatCtx)
             avformat_free_context(formatCtx);
         char* buf[1024];
-        av_strerror(err_code, buf, 1024);
-        printf("Couldn't open file %s: %d(%s)", [path cStringUsingEncoding: NSUTF8StringEncoding], err_code, buf);
+        av_strerror(err_code, (char*)buf, 1024);
+        printf("Couldn't open file %s: %d(%s)", [path cStringUsingEncoding: NSUTF8StringEncoding], err_code, (char*)buf);
         return lzmMediaErrorOpenFile;
     }
     
@@ -675,7 +675,7 @@ static int interrupt_callback(void *ctx);
     return errCode;
 }
 
-- (lzmMediaError) openVideoStream: (NSInteger) videoStream
+- (lzmMediaError) openVideoStream: (int) videoStream
 {
     // get a pointer to the codec context for the video stream
     AVCodecContext *codecCtx = _formatCtx->streams[videoStream]->codec;
@@ -1204,6 +1204,7 @@ static int interrupt_callback(void *ctx);
     return _videoFrameFormat == format;
 }
 
+// ffmpeg开始解码
 - (NSArray *) decodeFrames: (CGFloat) minDuration
 {
     if (_videoStream == -1 &&
@@ -1231,27 +1232,30 @@ static int interrupt_callback(void *ctx);
             
             while (pktSize > 0) {
                 
-                int len = 0;
-                len = avcodec_send_packet(_videoCodecCtx,&packet);
-                len = avcodec_receive_frame(_videoCodecCtx,_videoFrame);
+                int gotframe = 0;
+                int len = avcodec_decode_video2(_videoCodecCtx,
+                                                _videoFrame,
+                                                &gotframe,
+                                                &packet);
+
                 
                 if (len < 0) {
                     NSLog(@"decode video error, skip packet");
                     break;
                 }
                 
-                if (len == 0) {
+                if (gotframe) {
                     
-                    if (!_disableDeinterlacing &&
-                        _videoFrame->interlaced_frame) {
-                        
-                        //                        avpicture_deinterlace((AVPicture*)_videoFrame,
-                        //                                              (AVPicture*)_videoFrame,
-                        //                                              _videoCodecCtx->pix_fmt,
-                        //                                              _videoCodecCtx->width,
-                        //                                              _videoCodecCtx->height);
-                        
-                    }
+//                    if (!_disableDeinterlacing &&
+//                        _videoFrame->interlaced_frame) {
+//                        
+//                        avpicture_deinterlace((AVPicture*)_videoFrame,
+//                                              (AVPicture*)_videoFrame,
+//                                              _videoCodecCtx->pix_fmt,
+//                                              _videoCodecCtx->width,
+//                                              _videoCodecCtx->height);
+//                        
+//                    }
                     
                     lzmVideoFrame *frame = [self handleVideoFrame];
                     if (frame) {
