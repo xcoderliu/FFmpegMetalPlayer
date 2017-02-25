@@ -962,7 +962,7 @@ static int interrupt_callback(void *ctx);
 {
     [self closeScaler];
     
-    _imgData.reset(new uint8_t[_videoCodecCtx->width * _videoCodecCtx->height * 4]);
+    _imgData.reset(new uint8_t[_videoCodecCtx->width * _videoCodecCtx->height * 3]);
     
     _swsContext = sws_getCachedContext(_swsContext,
                                        _videoCodecCtx->width,
