@@ -17,6 +17,7 @@ typedef enum {
     lzmMediaErrorStreamNotFound,
     lzmMediaErrorCodecNotFound,
     lzmMediaErrorOpenCodec,
+    lzmMediaErrorAllocContext,
     lzmMediaErrorAllocateFrame,
     lzmMediaErroSetupScaler,
     lzmMediaErroReSampler,

@@ -12,7 +12,7 @@
 		F883C8271E4962560048BA4F /* libx264.a in Frameworks */ = {isa = PBXBuildFile; fileRef = F883C8241E4962560048BA4F /* libx264.a */; };
 		F883C8281E4962560048BA4F /* libxvidcore.a in Frameworks */ = {isa = PBXBuildFile; fileRef = F883C8251E4962560048BA4F /* libxvidcore.a */; };
 		F883C8321E49B6FE0048BA4F /* LzmAudioManager.m in Sources */ = {isa = PBXBuildFile; fileRef = F883C82B1E49B6FE0048BA4F /* LzmAudioManager.m */; };
-		F883C8331E49B6FE0048BA4F /* LzmMediaDecoder.m in Sources */ = {isa = PBXBuildFile; fileRef = F883C82D1E49B6FE0048BA4F /* LzmMediaDecoder.m */; };
+		F883C8331E49B6FE0048BA4F /* LzmMediaDecoder.mm in Sources */ = {isa = PBXBuildFile; fileRef = F883C82D1E49B6FE0048BA4F /* LzmMediaDecoder.mm */; };
 		F883C8341E49B6FE0048BA4F /* LzmMediaMetalView.m in Sources */ = {isa = PBXBuildFile; fileRef = F883C82F1E49B6FE0048BA4F /* LzmMediaMetalView.m */; };
 		F883C8351E49B6FE0048BA4F /* LzmPlayerViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = F883C8311E49B6FE0048BA4F /* LzmPlayerViewController.m */; };
 		F8B004671E484A7500AFF606 /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = F8B004661E484A7500AFF606 /* AppDelegate.m */; };
@@ -87,7 +87,7 @@
 		F883C82A1E49B6FE0048BA4F /* LzmAudioManager.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = LzmAudioManager.h; sourceTree = "<group>"; };
 		F883C82B1E49B6FE0048BA4F /* LzmAudioManager.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = LzmAudioManager.m; sourceTree = "<group>"; };
 		F883C82C1E49B6FE0048BA4F /* LzmMediaDecoder.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = LzmMediaDecoder.h; sourceTree = "<group>"; };
-		F883C82D1E49B6FE0048BA4F /* LzmMediaDecoder.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = LzmMediaDecoder.m; sourceTree = "<group>"; };
+		F883C82D1E49B6FE0048BA4F /* LzmMediaDecoder.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = LzmMediaDecoder.mm; sourceTree = "<group>"; };
 		F883C82E1E49B6FE0048BA4F /* LzmMediaMetalView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = LzmMediaMetalView.h; sourceTree = "<group>"; };
 		F883C82F1E49B6FE0048BA4F /* LzmMediaMetalView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = LzmMediaMetalView.m; sourceTree = "<group>"; };
 		F883C8301E49B6FE0048BA4F /* LzmPlayerViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = LzmPlayerViewController.h; sourceTree = "<group>"; };
@@ -194,7 +194,7 @@
 				F883C82A1E49B6FE0048BA4F /* LzmAudioManager.h */,
 				F883C82B1E49B6FE0048BA4F /* LzmAudioManager.m */,
 				F883C82C1E49B6FE0048BA4F /* LzmMediaDecoder.h */,
-				F883C82D1E49B6FE0048BA4F /* LzmMediaDecoder.m */,
+				F883C82D1E49B6FE0048BA4F /* LzmMediaDecoder.mm */,
 				F883C82E1E49B6FE0048BA4F /* LzmMediaMetalView.h */,
 				F883C82F1E49B6FE0048BA4F /* LzmMediaMetalView.m */,
 				F883C8301E49B6FE0048BA4F /* LzmPlayerViewController.h */,
@@ -469,7 +469,7 @@
 				F8B0046A1E484A7500AFF606 /* main.m in Sources */,
 				F883C8351E49B6FE0048BA4F /* LzmPlayerViewController.m in Sources */,
 				F8B004671E484A7500AFF606 /* AppDelegate.m in Sources */,
-				F883C8331E49B6FE0048BA4F /* LzmMediaDecoder.m in Sources */,
+				F883C8331E49B6FE0048BA4F /* LzmMediaDecoder.mm in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

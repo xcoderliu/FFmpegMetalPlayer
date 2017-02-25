@@ -297,7 +297,7 @@ static NSMutableDictionary * gHistory;
     if (!error && decoder) {
         
         _decoder        = decoder;
-        _dispatchQueue  = dispatch_queue_create("KxMovie", DISPATCH_QUEUE_SERIAL);
+        _dispatchQueue  = dispatch_queue_create("lzmPlayer", DISPATCH_QUEUE_SERIAL);
         _videoFrames    = [NSMutableArray array];
         _audioFrames    = [NSMutableArray array];
         
@@ -342,7 +342,7 @@ static NSMutableDictionary * gHistory;
     
         
         if (self.isViewLoaded) {
-            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.5 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.2 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
                 [self setupPresentView];
             });
             

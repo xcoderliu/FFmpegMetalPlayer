@@ -8,11 +8,14 @@
 
 #import "LzmMediaDecoder.h"
 #import "LzmAudioManager.h"
+
+extern "C" {
 #include "libavformat/avformat.h"
 #include "libswscale/swscale.h"
 #include "libswresample/swresample.h"
 #include "libavutil/pixdesc.h"
 #include "libavfilter/avfilter.h"
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -57,6 +60,9 @@ static NSString * errorMessage (lzmMediaError errorCode)
         case lzmMediaErrorOpenCodec:
             return NSLocalizedString(@"Unable to open codec", nil);
             
+        case lzmMediaErrorAllocContext:
+            return NSLocalizedString(@"Unable to allocate codec context", nil);
+            
         case lzmMediaErrorAllocateFrame:
             return NSLocalizedString(@"Unable to allocate frame", nil);
             
@@ -98,7 +104,7 @@ static NSArray *collectStreams(AVFormatContext *formatCtx, enum AVMediaType code
 {
     NSMutableArray *ma = [NSMutableArray array];
     for (NSInteger i = 0; i < formatCtx->nb_streams; ++i)
-        if (codecType == formatCtx->streams[i]->codec->codec_type)
+        if (codecType == formatCtx->streams[i]->codecpar->codec_type)
             [ma addObject: [NSNumber numberWithInteger: i]];
     return [ma copy];
 }
@@ -107,7 +113,7 @@ static NSData * copyFrameData(UInt8 *src, int linesize, int width, int height)
 {
     width = MIN(linesize, width);
     NSMutableData *md = [NSMutableData dataWithLength: width * height];
-    Byte *dst = md.mutableBytes;
+    Byte *dst = (Byte*)md.mutableBytes;
     for (NSUInteger i = 0; i < height; ++i) {
         memcpy(dst, src, width);
         dst += width;
@@ -252,6 +258,8 @@ static int interrupt_callback(void *ctx);
     AVCodecContext      *_videoCodecCtx;
     AVCodecContext      *_audioCodecCtx;
     AVCodecContext      *_subtitleCodecCtx;
+    AVCodec             *_videoCodec;
+    AVCodec             *_audioCodec;
     AVFrame             *_videoFrame;
     AVFrame             *_audioFrame;
     int                 _videoStream;
@@ -628,6 +636,7 @@ static int interrupt_callback(void *ctx);
         AVIOInterruptCB cb = {interrupt_callback, (__bridge void *)(self)};
         formatCtx->interrupt_callback = cb;
     }
+    
     int err_code = avformat_open_input(&formatCtx, [path cStringUsingEncoding:NSUTF8StringEncoding], NULL, NULL);
     if (err_code != 0) {
         if (formatCtx)
@@ -644,7 +653,7 @@ static int interrupt_callback(void *ctx);
         return lzmMediaErrorStreamInfoNotFound;
     }
     
-    av_dump_format(formatCtx, 0, [path.lastPathComponent cStringUsingEncoding: NSUTF8StringEncoding], false);
+    av_dump_format(formatCtx, 0, [path.lastPathComponent cStringUsingEncoding: NSUTF8StringEncoding], 0);
     
     _formatCtx = formatCtx;
     return lzmMediaErrorNone;
@@ -658,14 +667,12 @@ static int interrupt_callback(void *ctx);
     _videoStreams = collectStreams(_formatCtx, AVMEDIA_TYPE_VIDEO);
     for (NSNumber *n in _videoStreams) {
         
-        const NSUInteger iStream = n.integerValue;
+        const int iStream = n.intValue;
         
         if (0 == (_formatCtx->streams[iStream]->disposition & AV_DISPOSITION_ATTACHED_PIC)) {
-            
             errCode = [self openVideoStream: iStream];
             if (errCode == lzmMediaErrorNone)
                 break;
-            
         } else {
             
             _artworkStream = iStream;
@@ -677,18 +684,25 @@ static int interrupt_callback(void *ctx);
 
 - (lzmMediaError) openVideoStream: (int) videoStream
 {
-    // get a pointer to the codec context for the video stream
-    AVCodecContext *codecCtx = _formatCtx->streams[videoStream]->codec;
+    // get a pointer to the codec parameters for the video stream
+    // 从视频流中获取到 codec 参数指针
+    AVCodecParameters* codecpar = _formatCtx->streams[videoStream]->codecpar;
     
     // find the decoder for the video stream
-    AVCodec *codec = avcodec_find_decoder(codecCtx->codec_id);
+    AVCodec *codec = avcodec_find_decoder(codecpar->codec_id);
+    
     if (!codec)
         return lzmMediaErrorCodecNotFound;
     
-    // inform the codec that we can handle truncated bitstreams -- i.e.,
-    // bitstreams where frame boundaries can fall in the middle of packets
-    //if(codec->capabilities & CODEC_CAP_TRUNCATED)
-    //    _codecCtx->flags |= CODEC_FLAG_TRUNCATED;
+    AVCodecContext *codecCtx = avcodec_alloc_context3(codec);
+    
+    if (!codecCtx) {
+        return lzmMediaErrorAllocContext;
+    }
+    
+    // this step is very important,a h264 error will be caused with out this line
+    // 这个步骤比较重要,之前我把 2.x 改成3.x 的时候没有写这一句结果出来了h264的错误.
+    avcodec_parameters_to_context(codecCtx, codecpar);
     
     // open codec
     if (avcodec_open2(codecCtx, codec, NULL) < 0)
@@ -703,6 +717,7 @@ static int interrupt_callback(void *ctx);
     
     _videoStream = videoStream;
     _videoCodecCtx = codecCtx;
+    _videoCodec = codec;
     
     // determine fps
     
@@ -726,23 +741,33 @@ static int interrupt_callback(void *ctx);
     lzmMediaError errCode = lzmMediaErrorStreamNotFound;
     _audioStream = -1;
     _audioStreams = collectStreams(_formatCtx, AVMEDIA_TYPE_AUDIO);
-    for (NSNumber *n in _audioStreams) {
-        
+//    for (NSNumber *n in _audioStreams) {
+    
 //        errCode = [self openAudioStream: n.integerValue];
 //        if (errCode == lzmMediaErrorNone)
 //            break;
-    }
+//    }
     return errCode;
 }
 
-//- (lzmMediaError) openAudioStream: (NSInteger) audioStream
+//- (lzmMediaError) openAudioStream: (int) audioStream
 //{
-//    AVCodecContext *codecCtx = _formatCtx->streams[audioStream]->codec;
+//    AVCodecParameters* codecpar = _formatCtx->streams[audioStream]->codecpar;
+//
 //    SwrContext *swrContext = NULL;
 //    
-//    AVCodec *codec = avcodec_find_decoder(codecCtx->codec_id);
+//    AVCodec *codec = avcodec_find_decoder(codecpar->codec_id);
+//    
 //    if(!codec)
 //        return lzmMediaErrorCodecNotFound;
+//    
+//    AVCodecContext *codecCtx = avcodec_alloc_context3(codec);
+//    
+//    if (!codecCtx) {
+//        return lzmMediaErrorAllocContext;
+//    }
+//    
+//    avcodec_parameters_to_context(codecCtx, codecpar);
 //    
 //    if (avcodec_open2(codecCtx, codec, NULL) < 0)
 //        return lzmMediaErrorOpenCodec;
@@ -799,11 +824,21 @@ static int interrupt_callback(void *ctx);
 
 - (lzmMediaError) openSubtitleStream: (NSInteger) subtitleStream
 {
-    AVCodecContext *codecCtx = _formatCtx->streams[subtitleStream]->codec;
+    // get a pointer to the codec parameters for the subtitleStream
+    // 从字幕流中获取到 codec 参数指针
+    AVCodecParameters* codecpar = _formatCtx->streams[subtitleStream]->codecpar;
     
-    AVCodec *codec = avcodec_find_decoder(codecCtx->codec_id);
-    if(!codec)
+    // find the decoder for the video stream
+    AVCodec *codec = avcodec_find_decoder(codecpar->codec_id);
+    
+    if (!codec)
         return lzmMediaErrorCodecNotFound;
+    
+    AVCodecContext *codecCtx = avcodec_alloc_context3(codec);
+    
+    if (!codecCtx) {
+        return lzmMediaErrorAllocContext;
+    }
     
     const AVCodecDescriptor *codecDesc = avcodec_descriptor_get(codecCtx->codec_id);
     if (codecDesc && (codecDesc->props & AV_CODEC_PROP_BITMAP_SUB)) {
@@ -871,7 +906,7 @@ static int interrupt_callback(void *ctx);
     
     if (_videoFrame) {
         
-        av_free(_videoFrame);
+        av_frame_free(&(_videoFrame));
         _videoFrame = NULL;
     }
     
@@ -901,7 +936,7 @@ static int interrupt_callback(void *ctx);
     
     if (_audioFrame) {
         
-        av_free(_audioFrame);
+        av_frame_free(&(_audioFrame));
         _audioFrame = NULL;
     }
     
@@ -1228,138 +1263,98 @@ static int interrupt_callback(void *ctx);
         
         if (packet.stream_index ==_videoStream) {
             
-            int pktSize = packet.size;
-            
-            while (pktSize > 0) {
-                
-                int gotframe = 0;
-                int len = avcodec_decode_video2(_videoCodecCtx,
-                                                _videoFrame,
-                                                &gotframe,
-                                                &packet);
-
-                
-                if (len < 0) {
-                    NSLog(@"decode video error, skip packet");
-                    break;
-                }
-                
-                if (gotframe) {
-                    
-//                    if (!_disableDeinterlacing &&
-//                        _videoFrame->interlaced_frame) {
-//                        
-//                        avpicture_deinterlace((AVPicture*)_videoFrame,
-//                                              (AVPicture*)_videoFrame,
-//                                              _videoCodecCtx->pix_fmt,
-//                                              _videoCodecCtx->width,
-//                                              _videoCodecCtx->height);
-//                        
-//                    }
-                    
-                    lzmVideoFrame *frame = [self handleVideoFrame];
-                    if (frame) {
-                        
-                        [result addObject:frame];
-                        
-                        _position = frame.position;
-                        decodedDuration += frame.duration;
-                        if (decodedDuration > minDuration)
-                            finished = YES;
-                    }
-                }
-                
-                if (0 == len)
-                    break;
-                
-                pktSize -= len;
+            int errorcode = avcodec_send_packet(_videoCodecCtx, &packet);
+            if (errorcode != 0) {
+                break;
             }
+            errorcode = avcodec_receive_frame(_videoCodecCtx, _videoFrame);
+            if (errorcode != 0) {
+                break;
+            }
+            
+            lzmVideoFrame *frame = [self handleVideoFrame];
+            if (frame) {
+                
+                [result addObject:frame];
+                
+                _position = frame.position;
+                decodedDuration += frame.duration;
+                if (decodedDuration > minDuration)
+                    finished = YES;
+            }
+            
             
         } else if (packet.stream_index == _audioStream) {
             
-            int pktSize = packet.size;
-            
-            while (pktSize > 0) {
-                
-                int gotframe = 0;
-                int len = avcodec_decode_audio4(_audioCodecCtx,
-                                                _audioFrame,
-                                                &gotframe,
-                                                &packet);
-                
-                if (len < 0) {
-                    NSLog(@"decode audio error, skip packet");
-                    break;
-                }
-                
-                if (gotframe) {
-                    
-//                    lzmAudioFrame * frame = [self handleAudioFrame];
-//                    if (frame) {
-//                        
-//                        [result addObject:frame];
-//                        
-//                        if (_videoStream == -1) {
-//                            
-//                            _position = frame.position;
-//                            decodedDuration += frame.duration;
-//                            if (decodedDuration > minDuration)
-//                                finished = YES;
-//                        }
-//                    }
-                }
-                
-                if (0 == len)
-                    break;
-                
-                pktSize -= len;
+            int errorcode = avcodec_send_packet(_audioCodecCtx, &packet);
+            if (errorcode != 0) {
+                break;
             }
+            errorcode = avcodec_receive_frame(_audioCodecCtx, _audioFrame);
+            if (errorcode != 0) {
+                break;
+            }
+            
+//            lzmAudioFrame * frame = [self handleAudioFrame];
+//            if (frame) {
+//                
+//                [result addObject:frame];
+//                
+//                if (_videoStream == -1) {
+//                    
+//                    _position = frame.position;
+//                    decodedDuration += frame.duration;
+//                    if (decodedDuration > minDuration)
+//                        finished = YES;
+//                }
+//            }
+            
             
         } else if (packet.stream_index == _artworkStream) {
-            
-            if (packet.size) {
                 
-                lzmArtworkFrame *frame = [[lzmArtworkFrame alloc] init];
-                frame.picture = [NSData dataWithBytes:packet.data length:packet.size];
-                [result addObject:frame];
-            }
-            
-        } else if (packet.stream_index == _subtitleStream) {
-            
-            int pktSize = packet.size;
-            
-            while (pktSize > 0) {
-                
-                AVSubtitle subtitle;
-                int gotsubtitle = 0;
-                int len = avcodec_decode_subtitle2(_subtitleCodecCtx,
-                                                   &subtitle,
-                                                   &gotsubtitle,
-                                                   &packet);
-                
-                if (len < 0) {
-                    NSLog(@"decode subtitle error, skip packet");
-                    break;
-                }
-                
-                if (gotsubtitle) {
+                if (packet.size) {
                     
-                    lzmSubtitleFrame *frame = [self handleSubtitle: &subtitle];
-                    if (frame) {
-                        [result addObject:frame];
-                    }
-                    avsubtitle_free(&subtitle);
+                    lzmArtworkFrame *frame = [[lzmArtworkFrame alloc] init];
+                    frame.picture = [NSData dataWithBytes:packet.data length:packet.size];
+                    [result addObject:frame];
                 }
                 
-                if (0 == len)
-                    break;
+            } else if (packet.stream_index == _subtitleStream) {
                 
-                pktSize -= len;
+                int pktSize = packet.size;
+                
+                while (pktSize > 0) {
+                    
+                    AVSubtitle subtitle;
+                    int gotsubtitle = 0;
+                    int len = avcodec_decode_subtitle2(_subtitleCodecCtx,
+                                                       &subtitle,
+                                                       &gotsubtitle,
+                                                       &packet);
+                    
+                    if (len < 0) {
+                        NSLog(@"decode subtitle error, skip packet");
+                        break;
+                    }
+                    
+                    if (gotsubtitle) {
+                        
+                        lzmSubtitleFrame *frame = [self handleSubtitle: &subtitle];
+                        if (frame) {
+                            [result addObject:frame];
+                        }
+                        avsubtitle_free(&subtitle);
+                    }
+                    
+                    if (0 == len)
+                        break;
+                    
+                    pktSize -= len;
+                }
             }
+            
+            av_packet_unref(&packet);
         }
-        
-        av_packet_unref(&packet);
-    }
     
     return result;
 }
