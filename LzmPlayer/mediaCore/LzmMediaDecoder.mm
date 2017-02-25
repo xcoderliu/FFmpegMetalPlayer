@@ -453,7 +453,7 @@ static int interrupt_callback(void *ctx);
             
             char buf[256];
             
-            if (_videoStream) {
+            if (_videoStream != -1) {
                 avcodec_string(buf, sizeof(buf), _videoCodecCtx, 1);
                 NSString *s = [NSString stringWithCString:buf encoding:NSUTF8StringEncoding];
                 if ([s hasPrefix:@"Video: "])
@@ -461,7 +461,7 @@ static int interrupt_callback(void *ctx);
                 md[@"video"] = s;
             }
             
-            if (_audioStream) {
+            if (_audioStream != -1) {
                 AVStream *st = _formatCtx->streams[_audioStream];
                 
                 NSMutableString *ms = [NSMutableString string];
@@ -477,7 +477,7 @@ static int interrupt_callback(void *ctx);
                 md[@"audio"] = ms;
             }
             
-            if (_subtitleStream) {
+            if (_subtitleStream != -1) {
                 
                 AVStream *st = _formatCtx->streams[_subtitleStream];
                 
