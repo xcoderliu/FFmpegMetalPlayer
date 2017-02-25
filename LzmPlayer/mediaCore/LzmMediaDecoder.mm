@@ -452,61 +452,46 @@ static int interrupt_callback(void *ctx);
             
             char buf[256];
             
-            if (_videoStreams.count) {
-                NSMutableArray *ma = [NSMutableArray array];
-                for (NSNumber *n in _videoStreams) {
-                    AVStream *st = _formatCtx->streams[n.integerValue];
-                    avcodec_string(buf, sizeof(buf), st->codec, 1);
-                    NSString *s = [NSString stringWithCString:buf encoding:NSUTF8StringEncoding];
-                    if ([s hasPrefix:@"Video: "])
-                        s = [s substringFromIndex:@"Video: ".length];
-                    [ma addObject:s];
-                }
-                md[@"video"] = ma.copy;
+            if (_videoStream) {
+                avcodec_string(buf, sizeof(buf), _videoCodecCtx, 1);
+                NSString *s = [NSString stringWithCString:buf encoding:NSUTF8StringEncoding];
+                if ([s hasPrefix:@"Video: "])
+                    s = [s substringFromIndex:@"Video: ".length];
+                md[@"video"] = s;
             }
             
-            if (_audioStreams.count) {
-                NSMutableArray *ma = [NSMutableArray array];
-                for (NSNumber *n in _audioStreams) {
-                    AVStream *st = _formatCtx->streams[n.integerValue];
-                    
-                    NSMutableString *ms = [NSMutableString string];
-                    AVDictionaryEntry *lang = av_dict_get(st->metadata, "language", NULL, 0);
-                    if (lang && lang->value) {
-                        [ms appendFormat:@"%s ", lang->value];
-                    }
-                    
-                    avcodec_string(buf, sizeof(buf), st->codec, 1);
-                    NSString *s = [NSString stringWithCString:buf encoding:NSUTF8StringEncoding];
-                    if ([s hasPrefix:@"Audio: "])
-                        s = [s substringFromIndex:@"Audio: ".length];
-                    [ms appendString:s];
-                    
-                    [ma addObject:ms.copy];
+            if (_audioStream) {
+                AVStream *st = _formatCtx->streams[_audioStream];
+                
+                NSMutableString *ms = [NSMutableString string];
+                AVDictionaryEntry *lang = av_dict_get(st->metadata, "language", NULL, 0);
+                if (lang && lang->value) {
+                    [ms appendFormat:@"%s ", lang->value];
                 }
-                md[@"audio"] = ma.copy;
+                
+                avcodec_string(buf, sizeof(buf), _audioCodecCtx, 1);
+                NSString *s = [NSString stringWithCString:buf encoding:NSUTF8StringEncoding];
+                if ([s hasPrefix:@"Audio: "])
+                    s = [s substringFromIndex:@"Audio: ".length];
+                md[@"audio"] = ms;
             }
             
-            if (_subtitleStreams.count) {
-                NSMutableArray *ma = [NSMutableArray array];
-                for (NSNumber *n in _subtitleStreams) {
-                    AVStream *st = _formatCtx->streams[n.integerValue];
-                    
-                    NSMutableString *ms = [NSMutableString string];
-                    AVDictionaryEntry *lang = av_dict_get(st->metadata, "language", NULL, 0);
-                    if (lang && lang->value) {
-                        [ms appendFormat:@"%s ", lang->value];
-                    }
-                    
-                    avcodec_string(buf, sizeof(buf), st->codec, 1);
-                    NSString *s = [NSString stringWithCString:buf encoding:NSUTF8StringEncoding];
-                    if ([s hasPrefix:@"Subtitle: "])
-                        s = [s substringFromIndex:@"Subtitle: ".length];
-                    [ms appendString:s];
-                    
-                    [ma addObject:ms.copy];
+            if (_subtitleStream) {
+                
+                AVStream *st = _formatCtx->streams[_subtitleStream];
+                
+                NSMutableString *ms = [NSMutableString string];
+                AVDictionaryEntry *lang = av_dict_get(st->metadata, "language", NULL, 0);
+                if (lang && lang->value) {
+                    [ms appendFormat:@"%s ", lang->value];
                 }
-                md[@"subtitles"] = ma.copy;
+                
+                avcodec_string(buf, sizeof(buf), _subtitleCodecCtx, 1);
+                NSString *s = [NSString stringWithCString:buf encoding:NSUTF8StringEncoding];
+                if ([s hasPrefix:@"Subtitle: "])
+                    s = [s substringFromIndex:@"Subtitle: ".length];
+                [ms appendString:s];
+                md[@"subtitles"] = ms;
             }
             
         }
@@ -839,6 +824,8 @@ static int interrupt_callback(void *ctx);
     if (!codecCtx) {
         return lzmMediaErrorAllocContext;
     }
+    
+    avcodec_parameters_to_context(codecCtx, codecpar);
     
     const AVCodecDescriptor *codecDesc = avcodec_descriptor_get(codecCtx->codec_id);
     if (codecDesc && (codecDesc->props & AV_CODEC_PROP_BITMAP_SUB)) {
