@@ -132,7 +132,7 @@
     [metalView setFramebufferOnly:NO];
     metalView.delegate = self;
     metalView.depthStencilPixelFormat = /*MTLPixelFormatBGRG422*/MTLPixelFormatStencil8;
-    metalView.colorPixelFormat = MTLPixelFormatBGRA8Unorm;
+    metalView.colorPixelFormat = MTLPixelFormatBGRA8Unorm_sRGB;
     [metalView setAutoResizeDrawable:NO];
     [metalView setClearColor:MTLClearColorMake(0.15f, 0.15f, 0.15f, 1)];
     
