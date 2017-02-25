@@ -17,6 +17,8 @@ extern "C" {
 #include "libavfilter/avfilter.h"
 }
 
+#include <memory>
+
 ////////////////////////////////////////////////////////////////////////////////
 
 NSString * lzmMediaErrorDomain = @"xyz.xcoderliu.lzmplayer";
@@ -265,8 +267,6 @@ static int interrupt_callback(void *ctx);
     int                 _videoStream;
     int                 _audioStream;
     NSInteger           _subtitleStream;
-    AVPicture           _picture;
-    BOOL                _pictureValid;
     struct SwsContext   *_swsContext;
     CGFloat             _videoTimeBase;
     CGFloat             _audioTimeBase;
@@ -281,6 +281,7 @@ static int interrupt_callback(void *ctx);
     lzmVideoFrameFormat  _videoFrameFormat;
     NSUInteger          _artworkStream;
     NSInteger           _subtitleASSEvents;
+    std::unique_ptr<uint8_t[]> _imgData;
 }
 
 @end
@@ -952,9 +953,8 @@ static int interrupt_callback(void *ctx);
         _swsContext = NULL;
     }
     
-    if (_pictureValid) {
-        avpicture_free(&_picture);
-        _pictureValid = NO;
+    if (_imgData) {
+        _imgData.release();
     }
 }
 
@@ -962,13 +962,7 @@ static int interrupt_callback(void *ctx);
 {
     [self closeScaler];
     
-    _pictureValid = avpicture_alloc(&_picture,
-                                    AV_PIX_FMT_RGB24,
-                                    _videoCodecCtx->width,
-                                    _videoCodecCtx->height) == 0;
-    
-    if (!_pictureValid)
-        return NO;
+    _imgData.reset(new uint8_t[_videoCodecCtx->width * _videoCodecCtx->height * 4]);
     
     _swsContext = sws_getCachedContext(_swsContext,
                                        _videoCodecCtx->width,
@@ -1020,19 +1014,22 @@ static int interrupt_callback(void *ctx);
             return nil;
         }
         
+        uint8_t* pImgData = _imgData.get();
+        int linesize = _videoCodecCtx->width * 3;
+        
         sws_scale(_swsContext,
                   (const uint8_t **)_videoFrame->data,
                   _videoFrame->linesize,
                   0,
                   _videoCodecCtx->height,
-                  _picture.data,
-                  _picture.linesize);
+                  &pImgData,
+                  &linesize);
         
         
         lzmVideoFrameRGB *rgbFrame = [[lzmVideoFrameRGB alloc] init];
         
-        rgbFrame.linesize = _picture.linesize[0];
-        rgbFrame.rgb = [NSData dataWithBytes:_picture.data[0]
+        rgbFrame.linesize = linesize;
+        rgbFrame.rgb = [NSData dataWithBytes:pImgData
                                       length:rgbFrame.linesize * _videoCodecCtx->height];
         frame = rgbFrame;
     }
