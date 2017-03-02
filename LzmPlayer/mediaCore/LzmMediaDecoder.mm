@@ -611,8 +611,10 @@ static int interrupt_callback(void *ctx);
 
 - (lzmMediaError) openInput: (NSString *) path
 {
+    //创建 AVFormatContext 实例
     AVFormatContext *formatCtx = NULL;
     
+    //容错回调
     if (_interruptCallback) {
         
         formatCtx = avformat_alloc_context();
@@ -623,22 +625,30 @@ static int interrupt_callback(void *ctx);
         formatCtx->interrupt_callback = cb;
     }
     
+    //打开文件获得错误码
     int err_code = avformat_open_input(&formatCtx, [path cStringUsingEncoding:NSUTF8StringEncoding], NULL, NULL);
+    
+    //出现错误
     if (err_code != 0) {
+        
         if (formatCtx)
             avformat_free_context(formatCtx);
+        
         char* buf[1024];
         av_strerror(err_code, (char*)buf, 1024);
         printf("Couldn't open file %s: %d(%s)", [path cStringUsingEncoding: NSUTF8StringEncoding], err_code, (char*)buf);
+        
         return lzmMediaErrorOpenFile;
     }
     
+    //获取音视频流
     if (avformat_find_stream_info(formatCtx, NULL) < 0) {
         
         avformat_close_input(&formatCtx);
         return lzmMediaErrorStreamInfoNotFound;
     }
     
+    //打印音视频的具体信息
     av_dump_format(formatCtx, 0, [path.lastPathComponent cStringUsingEncoding: NSUTF8StringEncoding], 0);
     
     _formatCtx = formatCtx;
@@ -1232,7 +1242,7 @@ static int interrupt_callback(void *ctx);
     
     NSMutableArray *result = [NSMutableArray array];
     
-    AVPacket packet;
+    AVPacket packet;//Usually single video frame or several complete audio frames.
     
     CGFloat decodedDuration = 0;
     
