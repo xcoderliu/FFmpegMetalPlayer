@@ -188,7 +188,7 @@
             [metalView setColorPixelFormat:[_texture pixelFormat]];
             [metalView releaseDrawables];
         } else {
-            if ([[_texture device] isEqual:[[view.currentDrawable texture] device]]/* && [_texture width] == [desTexture width] && [_texture height] == [desTexture height]*/) {
+            if ([[_texture device] isEqual:[[view.currentDrawable texture] device]] && ([_texture width] <= [[view.currentDrawable texture] width])/* && [_texture width] == [desTexture width] && [_texture height] == [desTexture height]*/) {
                 
                 id<MTLBlitCommandEncoder> blitEncoder = [commandBuffer blitCommandEncoder];
                 
