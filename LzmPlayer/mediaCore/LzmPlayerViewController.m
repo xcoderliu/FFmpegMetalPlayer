@@ -32,9 +32,9 @@ static NSString * formatTimeInterval(CGFloat seconds, BOOL isLeft)
     m = m % 60;
     
     NSMutableString *format = [(isLeft && seconds >= 0.5 ? @"-" : @"") mutableCopy];
-    if (h != 0) [format appendFormat:@"%d:%0.2d", h, m];
-    else        [format appendFormat:@"%d", m];
-    [format appendFormat:@":%0.2d", s];
+    if (h != 0) [format appendFormat:@"%ld:%0.2ld",(long) h, (long)m];
+    else        [format appendFormat:@"%ld", (long)m];
+    [format appendFormat:@":%0.2ld", (long)s];
     
     return format;
 }
@@ -104,13 +104,14 @@ static NSMutableDictionary * gHistory;
     NSToolbarItem     *_fixedSpaceItem;
     
     NSBundle            *_doneButton;
-    //    UILabel             *_progressLabel;
-    //    UILabel             *_leftLabel;
+
     NSBundle            *_infoButton;
     NSTableView         *_tableView;
+    
+    //    UILabel             *_progressLabel;
+    //    UILabel             *_leftLabel;
     //    UIActivityIndicatorView *_activityIndicatorView;
     //    UILabel             *_subtitlesLabel;
-    
     //    UITapGestureRecognizer *_tapGestureRecognizer;
     //    UITapGestureRecognizer *_doubleTapGestureRecognizer;
     //    UIPanGestureRecognizer *_panGestureRecognizer;
