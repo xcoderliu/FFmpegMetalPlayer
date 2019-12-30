@@ -12,6 +12,8 @@
 #import <MetalKit/MetalKit.h>
 #import "LzmMediaDecoder.h"
 
+#define desTexture ([view.currentDrawable texture])
+
 //////////////////////////////////////////////////////////
 
 
@@ -188,11 +190,10 @@
             [metalView setColorPixelFormat:[_texture pixelFormat]];
             [metalView releaseDrawables];
         } else {
-            if ([[_texture device] isEqual:[[view.currentDrawable texture] device]] && ([_texture width] <= [[view.currentDrawable texture] width])/* && [_texture width] == [desTexture width] && [_texture height] == [desTexture height]*/) {
+            if ([[_texture device] isEqual:[desTexture device]] && ([_texture width] <= [desTexture width]) && ([_texture height] <= [desTexture height])) {
                 
                 id<MTLBlitCommandEncoder> blitEncoder = [commandBuffer blitCommandEncoder];
-                
-                [blitEncoder copyFromTexture:_texture sourceSlice:0 sourceLevel:0 sourceOrigin:MTLOriginMake(0, 0, 0) sourceSize:MTLSizeMake([_texture width], [_texture height], [_texture depth]) toTexture:[view.currentDrawable texture] destinationSlice:0 destinationLevel:0 destinationOrigin:MTLOriginMake(0, 0, 0)];
+                [blitEncoder copyFromTexture:_texture sourceSlice:0 sourceLevel:0 sourceOrigin:MTLOriginMake(0, 0, 0) sourceSize:MTLSizeMake([_texture width], [_texture height], [_texture depth]) toTexture:desTexture destinationSlice:0 destinationLevel:0 destinationOrigin:MTLOriginMake(0, 0, 0)];
                 [blitEncoder endEncoding];
                 
             } else {
